@@ -1,0 +1,698 @@
+---
+const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
+---
+
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prenotazioni Campo Beach Volley — Basket Conselve</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+      :root { --red: #C8102E; --red-dark: #a00e25; --gray-bg: #f0f0f0; --text: #1a1a1a; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Inter', system-ui, sans-serif; background: var(--gray-bg); color: var(--text); }
+
+      .topbar { background: var(--red); color: white; padding: 0.6rem 2rem; display: flex; align-items: center; gap: 0.75rem; }
+      .topbar-logo { height: 36px; width: auto; display: block; }
+      .topbar-title { font-size: 1rem; font-weight: 600; opacity: 0.92; }
+
+      .page-hero {
+        position: relative;
+        height: 380px;
+        overflow: hidden;
+        border-bottom: 3px solid var(--red);
+      }
+      .hero-slideshow {
+        position: absolute; inset: 0;
+        display: flex;
+        gap: 2px;
+      }
+      .hero-slideshow img {
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        object-fit: cover;
+      }
+      @media (max-width: 640px) {
+        .hero-slideshow img:nth-child(3) { display: none; }
+      }
+      .page-hero::after {
+        content: '';
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 70%),
+          linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.45));
+        z-index: 1;
+      }
+      .hero-card {
+        position: absolute;
+        left: 50%; top: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        max-width: calc(100% - 2rem);
+        z-index: 2;
+        padding: 0 1rem;
+      }
+      .hero-card h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: white;
+        letter-spacing: -0.01em;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.7), 0 4px 24px rgba(0,0,0,0.6);
+      }
+      .hero-card p {
+        font-size: 1.05rem;
+        color: white;
+        margin-top: 0.6rem;
+        font-weight: 600;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 2px 12px rgba(0,0,0,0.6);
+      }
+      @media (max-width: 640px) {
+        .page-hero { height: 260px; }
+        .hero-card h1 { font-size: 1.45rem; }
+        .hero-card p { font-size: 0.9rem; }
+      }
+
+      .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+
+      .info-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.85rem;
+        margin-bottom: 1.25rem;
+      }
+      .info-box, .location-box {
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: #444;
+      }
+      .info-box {
+        background: white;
+        border-left: 4px solid var(--red);
+      }
+      .info-box strong { color: #1a1a1a; }
+      .location-box {
+        background: white;
+        border-left: 4px solid var(--red);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 0.6rem;
+      }
+      .location-box strong { color: #1a1a1a; }
+      .btn-maps {
+        align-self: flex-start;
+        background: var(--red);
+        color: white;
+        padding: 0.4rem 0.9rem;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: background 0.15s;
+      }
+      .btn-maps:hover { background: var(--red-dark); }
+      @media (max-width: 640px) {
+        .info-row { grid-template-columns: 1fr; }
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.85rem;
+        margin-bottom: 1.5rem;
+      }
+      .step {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem 0.85rem;
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,.05);
+        position: relative;
+      }
+      .step-num {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: var(--red);
+        color: white;
+        font-weight: 800;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+      }
+      .step-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #1a1a1a;
+        margin-bottom: 0.25rem;
+      }
+      .step-desc {
+        font-size: 0.8rem;
+        color: #666;
+        line-height: 1.4;
+      }
+      @media (max-width: 640px) {
+        .steps { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+        .step { padding: 0.75rem 0.6rem; }
+        .step-num { width: 28px; height: 28px; font-size: 0.85rem; }
+        .step-title { font-size: 0.88rem; }
+        .step-desc { font-size: 0.75rem; }
+      }
+
+      .legend { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+      .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 500; }
+      .dot { width: 12px; height: 12px; border-radius: 50%; }
+      #calendar { background: white; border-radius: 10px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+
+      .fc .fc-button-primary { background: var(--red) !important; border-color: var(--red) !important; }
+      .fc .fc-button-primary:hover { background: var(--red-dark) !important; border-color: var(--red-dark) !important; }
+      .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--red-dark) !important; border-color: var(--red-dark) !important; }
+
+      /* Checkout button */
+      #checkout-btn {
+        display: none; position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 50;
+        background: var(--red); color: white;
+        border: none; border-radius: 10px; padding: 0.85rem 1.4rem;
+        font-family: inherit; font-size: 0.95rem; font-weight: 700;
+        cursor: pointer; box-shadow: 0 4px 16px rgba(200,16,46,.35);
+        align-items: center; gap: 0.75rem;
+        transition: background 0.15s, transform 0.12s;
+      }
+      #checkout-btn:hover { background: var(--red-dark); transform: translateY(-2px); }
+      #checkout-btn.visible { display: flex; }
+
+      /* Modal */
+      .modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,.55); z-index: 100;
+        align-items: center; justify-content: center;
+      }
+      .modal-overlay.open { display: flex; }
+      .modal {
+        background: white; border-radius: 12px; padding: 2rem;
+        width: 100%; max-width: 440px; position: relative;
+        box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      }
+      .modal-header { border-bottom: 3px solid var(--red); padding-bottom: 0.75rem; margin-bottom: 1.25rem; }
+      .modal-header h2 { font-size: 1.3rem; font-weight: 800; color: var(--red); }
+      .modal label { display: block; margin-bottom: 0.3rem; font-size: 0.85rem; font-weight: 600; color: #444; text-transform: uppercase; letter-spacing: 0.03em; }
+      .modal input { width: 100%; padding: 0.55rem 0.8rem; border: 1.5px solid #ddd; border-radius: 7px; margin-bottom: 1rem; font-size: 1rem; font-family: inherit; transition: border-color 0.15s; }
+      .modal input:focus { outline: none; border-color: var(--red); }
+      .modal input.error-field { border-color: #dc2626; margin-bottom: 0.25rem; }
+      .field-error { color: #dc2626; font-size: 0.8rem; margin-bottom: 0.75rem; display: none; }
+      .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem; }
+      .btn { padding: 0.55rem 1.4rem; border-radius: 7px; border: none; cursor: pointer; font-size: 0.95rem; font-weight: 600; font-family: inherit; transition: background 0.15s; }
+      .btn-primary { background: var(--red); color: white; }
+      .btn-primary:hover { background: var(--red-dark); }
+      .btn-secondary { background: #eee; color: #333; }
+      .btn-secondary:hover { background: #ddd; }
+      .slot-info { background: #fff5f5; border-left: 3px solid var(--red); border-radius: 4px; padding: 0.5rem 0.75rem; margin-bottom: 1.25rem; font-size: 0.9rem; font-weight: 600; color: var(--red); }
+      .error-msg { color: #dc2626; font-size: 0.85rem; margin-bottom: 0.5rem; }
+      .success-msg { color: #16a34a; font-size: 1rem; text-align: center; margin-top: 0.5rem; font-weight: 600; }
+      .iti { width: 100%; margin-bottom: 1rem; display: block; }
+      .iti__tel-input { width: 100%; }
+
+      footer {
+        background: white;
+        border-top: 1px solid #e5e5e5;
+        padding: 2.5rem 1.5rem 1.75rem;
+        margin-top: 3rem;
+        text-align: center;
+        color: #333;
+        font-size: 0.92rem;
+        line-height: 1.7;
+      }
+      footer a { color: inherit; text-decoration: none; }
+      footer a:hover { text-decoration: underline; }
+      .footer-line { margin-bottom: 0.25rem; }
+      .footer-phones { display: inline-flex; gap: 1.25rem; }
+      .footer-address { margin-top: 0.5rem; }
+      .footer-social { display: flex; justify-content: center; gap: 1rem; margin: 1.25rem 0 1rem; }
+      .footer-social a {
+        width: 28px; height: 28px; display: inline-flex;
+        align-items: center; justify-content: center;
+        color: #1a1a1a;
+      }
+      .footer-social svg { width: 22px; height: 22px; }
+      .footer-copy { color: #666; font-size: 0.82rem; margin-top: 0.5rem; }
+
+      @media (max-width: 640px) {
+        .topbar { padding: 0.55rem 1rem; }
+        .topbar-logo { height: 30px; }
+        .topbar-title { font-size: 0.78rem; }
+        .page-hero { padding: 1rem; }
+        .page-hero h1 { font-size: 1.3rem; }
+        .page-hero p { font-size: 0.85rem; }
+        .container { margin: 1rem auto; }
+        .legend { gap: 0.6rem; }
+        .legend-item { font-size: 0.78rem; }
+        #calendar { padding: 0.75rem; }
+        .modal { padding: 1.25rem; margin: 0.75rem; max-width: 100%; }
+        .modal-actions { flex-direction: column-reverse; gap: 0.5rem; }
+        .modal-actions .btn { width: 100%; text-align: center; padding: 0.7rem; }
+        #checkout-btn {
+          bottom: 1rem; right: 1rem; left: 1rem;
+          width: calc(100% - 2rem);
+          justify-content: center;
+          border-radius: 12px;
+        }
+      }
+    </style>
+    <style is:global>
+      .slot-available {
+        cursor: pointer !important;
+        transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease !important;
+      }
+      .slot-available:hover {
+        transform: scaleY(1.08) scaleX(1.02) !important;
+        filter: brightness(1.12) !important;
+        box-shadow: 0 4px 14px rgba(34,197,94,.4) !important;
+        z-index: 10 !important;
+      }
+      .slot-selected { cursor: pointer !important; }
+      .slot-selected:hover { filter: brightness(1.1) !important; }
+      .fc-event:not(.slot-available):not(.slot-selected) { cursor: default !important; }
+
+      .fc .fc-toolbar { margin-bottom: 1.25rem; }
+      .fc .fc-toolbar-chunk { display: flex !important; flex-direction: row !important; align-items: center !important; }
+      .fc .fc-toolbar-title { font-size: 1.1rem !important; font-weight: 800 !important; color: #1a1a1a; letter-spacing: -0.02em; }
+
+      .fc .fc-col-header-cell { background: #f9f9f9; border-color: #e8e8e8 !important; padding: 0.5rem 0 !important; }
+      .fc .fc-col-header-cell-cushion { color: #444 !important; font-weight: 700 !important; font-size: 0.82rem !important; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none !important; }
+      .fc .fc-day-today .fc-col-header-cell-cushion { color: #1a1a1a !important; background: #ebebeb; border-radius: 4px; padding: 2px 8px; }
+
+      .fc .fc-timegrid-slot-label-cushion { font-size: 0.75rem !important; font-weight: 700 !important; color: #888 !important; text-transform: uppercase; letter-spacing: 0.04em; }
+      .fc .fc-timegrid-slot-label { border-color: #f0f0f0 !important; }
+      .fc .fc-timegrid-slot { border-color: #f0f0f0 !important; height: 2rem !important; }
+      .fc .fc-timegrid-slot-minor { border-color: transparent !important; }
+      .fc .fc-timegrid-event { border-radius: 4px !important; }
+      .fc .fc-timegrid-event .fc-event-main { padding: 1px 4px !important; }
+      .fc td, .fc th { border-color: #e8e8e8 !important; }
+      .fc .fc-day-today { background: rgba(200,16,46,.04) !important; }
+      .fc .fc-timegrid-body::-webkit-scrollbar { width: 4px; }
+      .fc .fc-timegrid-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+      @media (max-width: 640px) {
+        .fc .fc-toolbar-title { font-size: 0.82rem !important; }
+        .fc .fc-col-header-cell-cushion { font-size: 0.68rem !important; }
+        .fc .fc-timegrid-slot-label-cushion { font-size: 0.62rem !important; }
+        .fc .fc-button { padding: 0.3rem 0.55rem !important; font-size: 0.78rem !important; }
+        .fc .fc-toolbar { gap: 0.4rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <img class="topbar-logo" src="/logo.png" alt="Basket Conselve" />
+      <span class="topbar-title">Basket Conselve ASD</span>
+    </div>
+    <div class="page-hero">
+      <div class="hero-slideshow">
+        <img src="/photos/field-1.webp" alt="" />
+        <img src="/photos/field-3.webp" alt="" />
+        <img src="/photos/field-5.webp" alt="" />
+      </div>
+      <div class="hero-card">
+        <h1>Beach Volley • Basket Conselve</h1>
+        <p>Scegli giorno e ora, prenota in un click</p>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-title">Seleziona</div>
+          <div class="step-desc">Scegli gli slot dal calendario</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-title">Prenota</div>
+          <div class="step-desc">Compila il form e invia la richiesta</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-title">Paga</div>
+          <div class="step-desc">Una volta approvata, ricevi il link PayPal via email</div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-title">Gioca</div>
+          <div class="step-desc">Ricevi la conferma e vai in campo</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-box">
+          <div>
+            <strong>⚠️ Importante</strong><br />
+            Non sono disponibili le docce interne. È presente un doccino esterno per togliersi la sabbia.
+          </div>
+        </div>
+        <div class="location-box">
+          <div>
+            <strong>📍 Dove siamo</strong><br />
+            Via L. Traverso 6, Conselve 35026, PD
+          </div>
+          <a class="btn-maps" href="https://maps.app.goo.gl/Mg1HvLXsknipmHe7A" target="_blank" rel="noopener">
+            Apri in Maps →
+          </a>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><div class="dot" style="background:#22c55e"></div> Disponibile</div>
+        <div class="legend-item"><div class="dot" style="background:#1d4ed8"></div> Selezionato</div>
+        <div class="legend-item"><div class="dot" style="background:#eab308"></div> In prenotazione</div>
+        <div class="legend-item"><div class="dot" style="background:#dc2626"></div> Prenotato</div>
+        <div class="legend-item"><div class="dot" style="background:#374151"></div> Bloccato</div>
+      </div>
+      <div id="calendar"></div>
+    </div>
+
+    <footer>
+      <div class="footer-line"><a href="mailto:basketconselve@gmail.com">basketconselve@gmail.com</a></div>
+      <div class="footer-phones">
+        <a href="tel:+393387719505">338 7719505</a>
+        <a href="tel:+393393561267">339 3561267</a>
+      </div>
+      <div class="footer-address">Via L. Traverso 6, Conselve 35026, PD</div>
+      <div class="footer-social">
+        <a href="https://www.instagram.com/basketconselve/" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+          </svg>
+        </a>
+        <a href="https://www.facebook.com/basketconselveasd" target="_blank" rel="noopener" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"></path>
+          </svg>
+        </a>
+      </div>
+      <div class="footer-copy">©2024 di Basket Conselve ASD.</div>
+    </footer>
+
+    <button id="checkout-btn" data-price={bookingPrice}>
+      <span id="checkout-info">1 slot — €{bookingPrice}</span>
+      <span>Prenota →</span>
+    </button>
+
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal">
+        <div class="modal-header"><h2>Richiedi prenotazione</h2></div>
+        <div class="slot-info" id="modal-slot-info"></div>
+        <div class="error-msg" id="modal-error" style="display:none"></div>
+        <div id="modal-form">
+          <label for="inp-name">Nome e cognome *</label>
+          <input id="inp-name" type="text" required />
+
+          <label for="inp-email">Email *</label>
+          <input id="inp-email" type="email" required />
+          <div class="field-error" id="email-error">Inserisci un'email valida.</div>
+
+          <label for="inp-email-confirm">Conferma email *</label>
+          <input id="inp-email-confirm" type="email" required />
+          <div class="field-error" id="email-confirm-error">Le email non corrispondono.</div>
+
+          <label for="inp-phone">Telefono</label>
+          <input id="inp-phone" type="tel" placeholder="333 123 4567" />
+
+          <div class="modal-actions">
+            <button class="btn btn-secondary" id="modal-cancel">Annulla</button>
+            <button class="btn btn-primary" id="modal-submit">Prenota</button>
+          </div>
+        </div>
+        <div class="success-msg" id="modal-success" style="display:none">
+          Richiesta inviata! Riceverai una email quando sarà approvata.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      import { Calendar } from '@fullcalendar/core';
+      import timeGridPlugin from '@fullcalendar/timegrid';
+      import interactionPlugin from '@fullcalendar/interaction';
+      import intlTelInput from 'intl-tel-input';
+      import 'intl-tel-input/dist/css/intlTelInput.css';
+
+      const PRICE_PER_SLOT = Number((document.getElementById('checkout-btn') as HTMLElement).dataset.price ?? 10);
+      const SLOT_MS = 30 * 60 * 1000;
+      const SEL_COLOR = '#1d4ed8';
+      const AVAIL_COLOR = '#22c55e';
+
+      let selStart: Date | null = null;
+      let selEnd: Date | null = null;   // exclusive end of last selected slot
+
+      const iti = intlTelInput(document.getElementById('inp-phone') as HTMLInputElement, {
+        initialCountry: 'it',
+        loadUtils: () => import('intl-tel-input/utils'),
+      });
+
+      function updateEventColors() {
+        calendar.getEvents().forEach((ev) => {
+          const { status } = ev.extendedProps as { status: string };
+          const inSelection = selStart && selEnd && ev.start! >= selStart && ev.end! <= selEnd;
+          if (inSelection) {
+            ev.setProp('backgroundColor', SEL_COLOR);
+            ev.setProp('borderColor', SEL_COLOR);
+          } else if (status === 'available') {
+            ev.setProp('backgroundColor', AVAIL_COLOR);
+            ev.setProp('borderColor', AVAIL_COLOR);
+          }
+        });
+      }
+
+      function updateCheckoutButton() {
+        const btn = document.getElementById('checkout-btn')!;
+        const info = document.getElementById('checkout-info')!;
+        if (!selStart || !selEnd) {
+          btn.classList.remove('visible');
+          return;
+        }
+        const nSlots = Math.round((selEnd.getTime() - selStart.getTime()) / SLOT_MS);
+        info.textContent = `${nSlots} slot — €${nSlots * PRICE_PER_SLOT}`;
+        btn.classList.add('visible');
+      }
+
+      function clearSelection() {
+        selStart = null;
+        selEnd = null;
+        updateEventColors();
+        updateCheckoutButton();
+      }
+
+      function formatRange(start: Date, end: Date): string {
+        const opts: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'Europe/Rome' };
+        const dateStr = start.toLocaleDateString('it-IT', opts);
+        const startTime = start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' });
+        const endTime = end.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' });
+        return `${dateStr}, ${startTime} – ${endTime}`;
+      }
+
+      const isMobile = () => window.innerWidth < 640;
+
+      const calendar = new Calendar(document.getElementById('calendar')!, {
+        plugins: [timeGridPlugin, interactionPlugin],
+        initialView: isMobile() ? 'timeGrid3' : 'timeGrid7days',
+        views: {
+          timeGrid7days: { type: 'timeGrid', duration: { days: 7 } },
+          timeGrid3: { type: 'timeGrid', duration: { days: 3 } },
+        },
+        initialDate: new Date(),
+        windowResize: () => {
+          const target = isMobile() ? 'timeGrid3' : 'timeGrid7days';
+          if (calendar.view.type !== target) calendar.changeView(target);
+        },
+        locale: 'it',
+        customButtons: {
+          thisWeek: { text: 'Oggi', click: () => calendar.today() },
+        },
+        headerToolbar: { left: 'title', center: '', right: 'thisWeek prev,next' },
+        nowIndicator: true,
+        validRange: { start: new Date() },
+        slotDuration: '00:30:00',
+        slotMinTime: '16:00:00',
+        slotMaxTime: '23:00:00',
+        allDaySlot: false,
+        height: 'auto',
+        eventClassNames: (arg) => {
+          const { status } = arg.event.extendedProps as { status: string };
+          const inSel = selStart && selEnd && arg.event.start! >= selStart && arg.event.end! <= selEnd;
+          if (inSel) return ['slot-selected'];
+          if (status === 'available') return ['slot-available'];
+          return [];
+        },
+        eventContent: (arg) => {
+          const { status } = arg.event.extendedProps as { status: string };
+          const time = arg.event.start!.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+          const icon = (status !== 'available' && status !== 'past') ? '🔒 ' : '';
+          return { html: `<div style="width:100%;text-align:center;font-size:0.8rem;font-weight:600;padding:2px 0;">${icon}${time}</div>` };
+        },
+        events: async (info) => {
+          const from = info.startStr.slice(0, 10);
+          const to = info.endStr.slice(0, 10);
+          const res = await fetch(`/api/slots?from=${from}&to=${to}`);
+          return res.json();
+        },
+        eventClick: (info) => {
+          const ev = info.event;
+          const { status } = ev.extendedProps as { status: string };
+
+          // Allow clicking selected slots too (to deselect)
+          const inSel = selStart && selEnd && ev.start! >= selStart && ev.end! <= selEnd;
+
+          if (status !== 'available' && !inSel) return;
+
+          const slotStart = ev.start!;
+          const slotEnd = ev.end!;
+
+          if (!selStart || !selEnd) {
+            selStart = slotStart;
+            selEnd = slotEnd;
+          } else if (slotStart.getTime() === selEnd.getTime() && slotStart.toDateString() === selStart.toDateString()) {
+            // Adjacent at end, same day → extend
+            selEnd = slotEnd;
+          } else if (slotEnd.getTime() === selStart.getTime() && slotEnd.toDateString() === selEnd.toDateString()) {
+            // Adjacent at start, same day → extend backward
+            selStart = slotStart;
+          } else if (slotEnd.getTime() === selEnd.getTime()) {
+            // Clicking the last selected slot → shrink or deselect
+            if (selStart.getTime() === new Date(selEnd.getTime() - SLOT_MS).getTime()) {
+              selStart = null; selEnd = null;
+            } else {
+              selEnd = slotStart;
+            }
+          } else if (slotStart.getTime() === selStart.getTime()) {
+            // Clicking the first selected slot → shrink or deselect
+            if (new Date(selStart.getTime() + SLOT_MS).getTime() === selEnd.getTime()) {
+              selStart = null; selEnd = null;
+            } else {
+              selStart = slotEnd;
+            }
+          } else {
+            // Non-adjacent or different day → reset and start new selection
+            selStart = slotStart;
+            selEnd = slotEnd;
+          }
+
+          updateEventColors();
+          updateCheckoutButton();
+        },
+      });
+
+      calendar.render();
+
+      // Open modal from checkout button
+      document.getElementById('checkout-btn')!.addEventListener('click', () => {
+        if (!selStart || !selEnd) return;
+        document.getElementById('modal-slot-info')!.textContent = formatRange(selStart, selEnd);
+        document.getElementById('modal-error')!.style.display = 'none';
+        document.getElementById('email-confirm-error')!.style.display = 'none';
+        (document.getElementById('inp-email-confirm') as HTMLInputElement).classList.remove('error-field');
+        ['inp-name', 'inp-email', 'inp-email-confirm', 'inp-phone'].forEach(
+          (id) => ((document.getElementById(id) as HTMLInputElement).value = '')
+        );
+        document.getElementById('modal-form')!.style.display = 'block';
+        document.getElementById('modal-success')!.style.display = 'none';
+        document.getElementById('modal-overlay')!.classList.add('open');
+      });
+
+      document.getElementById('modal-cancel')!.addEventListener('click', () => {
+        document.getElementById('modal-overlay')!.classList.remove('open');
+      });
+
+      document.getElementById('modal-overlay')!.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('modal-overlay'))
+          document.getElementById('modal-overlay')!.classList.remove('open');
+      });
+
+      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+      function checkEmailMatch() {
+        const email = (document.getElementById('inp-email') as HTMLInputElement).value.trim();
+        const confirm = (document.getElementById('inp-email-confirm') as HTMLInputElement).value.trim();
+        const confirmInput = document.getElementById('inp-email-confirm') as HTMLInputElement;
+        const errEl = document.getElementById('email-confirm-error')!;
+        if (confirm && email !== confirm) {
+          errEl.textContent = 'Le email non corrispondono.';
+          errEl.style.display = 'block';
+          confirmInput.classList.add('error-field');
+        } else {
+          errEl.style.display = 'none';
+          confirmInput.classList.remove('error-field');
+        }
+      }
+
+      document.getElementById('inp-email')!.addEventListener('input', () => {
+        const email = (document.getElementById('inp-email') as HTMLInputElement).value.trim();
+        const emailInput = document.getElementById('inp-email') as HTMLInputElement;
+        const errEl = document.getElementById('email-error')!;
+        if (email && !EMAIL_RE.test(email)) {
+          errEl.style.display = 'block';
+          emailInput.classList.add('error-field');
+        } else {
+          errEl.style.display = 'none';
+          emailInput.classList.remove('error-field');
+        }
+        checkEmailMatch();
+      });
+
+      document.getElementById('inp-email-confirm')!.addEventListener('input', checkEmailMatch);
+
+      document.getElementById('modal-submit')!.addEventListener('click', async () => {
+        const name = (document.getElementById('inp-name') as HTMLInputElement).value.trim();
+        const email = (document.getElementById('inp-email') as HTMLInputElement).value.trim();
+        const emailConfirm = (document.getElementById('inp-email-confirm') as HTMLInputElement).value.trim();
+        const phone = iti.getNumber() || '';
+        const errEl = document.getElementById('modal-error')!;
+
+        if (!name) { errEl.textContent = 'Il nome è obbligatorio.'; errEl.style.display = 'block'; return; }
+        if (!email || !EMAIL_RE.test(email)) { errEl.textContent = "Inserisci un'email valida."; errEl.style.display = 'block'; return; }
+        if (email !== emailConfirm) {
+          errEl.textContent = 'Le email non corrispondono.'; errEl.style.display = 'block';
+          (document.getElementById('inp-email-confirm') as HTMLInputElement).classList.add('error-field');
+          return;
+        }
+        errEl.style.display = 'none';
+
+        const btn = document.getElementById('modal-submit') as HTMLButtonElement;
+        btn.disabled = true;
+        btn.textContent = 'Invio...';
+
+        const res = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name, email, phone,
+            slot_start: selStart!.toISOString(),
+            slot_end: selEnd!.toISOString(),
+          }),
+        });
+
+        btn.disabled = false;
+        btn.textContent = 'Prenota';
+
+        if (res.ok) {
+          document.getElementById('modal-form')!.style.display = 'none';
+          document.getElementById('modal-success')!.style.display = 'block';
+          clearSelection();
+          calendar.refetchEvents();
+        } else {
+          const data = await res.json();
+          errEl.textContent = data.error ?? 'Errore durante la prenotazione.';
+          errEl.style.display = 'block';
+        }
+      });
+    </script>
+  </body>
+</html>

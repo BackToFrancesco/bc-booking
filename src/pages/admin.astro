@@ -1,0 +1,553 @@
+---
+import sql from '../lib/db';
+import { MOCK_API } from '../lib/config';
+import { MOCK_SCHEDULE } from '../lib/slots';
+import type { DaySchedule } from '../lib/slots';
+
+const isMock = MOCK_API;
+
+const pendingBookings = isMock ? [
+  { id: 'mock-1', name: 'Mario Rossi', email: 'mario@example.com', phone: '+39 333 123 4567', slot_start: new Date('2026-05-06T18:00:00'), slot_end: new Date('2026-05-06T19:30:00'), status: 'pending', created_at: new Date() },
+  { id: 'mock-2', name: 'Giulia Bianchi', email: 'giulia@example.com', phone: '+39 347 987 6543', slot_start: new Date('2026-05-07T20:00:00'), slot_end: new Date('2026-05-07T21:00:00'), status: 'approved', created_at: new Date() },
+] : await sql<{
+  id: string; name: string; email: string; phone: string | null;
+  slot_start: Date; slot_end: Date; status: string; created_at: Date;
+}[]>`
+  SELECT id, name, email, phone, slot_start, slot_end, status, created_at
+  FROM bookings
+  WHERE status IN ('pending', 'approved')
+  ORDER BY slot_start ASC
+`;
+
+const schedule: DaySchedule[] = isMock ? MOCK_SCHEDULE : await sql<DaySchedule[]>`
+  SELECT day_of_week, open_hour, close_hour FROM day_schedules ORDER BY day_of_week
+`;
+
+function formatSlotRange(start: Date, end: Date): string {
+  const tz = { timeZone: 'Europe/Rome' };
+  const s = new Date(start);
+  const e = new Date(end);
+  const f = (d: Date, opts: Intl.DateTimeFormatOptions) => d.toLocaleString('it-IT', { ...opts, ...tz });
+  const startStr = `${f(s, { weekday: 'short' })} ${f(s, { day: '2-digit' })} ${f(s, { month: 'short' })} ${f(s, { year: 'numeric' })}, ${f(s, { hour: '2-digit', minute: '2-digit' })}`;
+  const endTime = f(e, { hour: '2-digit', minute: '2-digit' });
+  return `${startStr} – ${endTime}`;
+}
+
+const statusLabel: Record<string, string> = {
+  pending: '⏳ In attesa',
+  approved: '✅ Approvata',
+  confirmed: '💰 Confermata',
+  rejected: '❌ Rifiutata',
+};
+
+const DAY_NAMES = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+const hours = Array.from({ length: 24 }, (_, i) => i);
+---
+
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Prenotazioni — Basket Conselve</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+      :root { --red: #C8102E; --red-dark: #a00e25; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Inter', system-ui, sans-serif; background: #f0f0f0; color: #1a1a1a; }
+      header { background: var(--red); color: white; padding: 0.6rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+      .header-left { display: flex; align-items: center; gap: 0.75rem; }
+      .header-logo { height: 36px; width: auto; display: block; }
+      header h1 { font-size: 1rem; font-weight: 600; opacity: 0.92; }
+      .logout { background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.3); color: white; padding: 0.35rem 0.9rem; border-radius: 6px; cursor: pointer; font-size: 0.88rem; font-weight: 600; font-family: inherit; transition: background 0.15s; }
+      .logout:hover { background: rgba(255,255,255,.35); }
+      .container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+      .section-title { font-size: 1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--red); margin-bottom: 0.75rem; padding-left: 0.5rem; border-left: 3px solid var(--red); }
+      .card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.07); margin-bottom: 2rem; overflow: hidden; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 0.7rem 1rem; text-align: left; font-size: 0.86rem; border-bottom: 1px solid #f0f0f0; }
+      th { background: #fafafa; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: #666; }
+      tr:last-child td { border-bottom: none; }
+      .btn { padding: 0.3rem 0.8rem; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; margin-right: 0.3rem; font-family: inherit; }
+      .btn-approve { background: #22c55e; color: white; }
+      .btn-reject { background: #ef4444; color: white; }
+      .btn-confirm { background: #3b82f6; color: white; }
+      .btn-danger { background: #dc2626; color: white; }
+      .btn-secondary { background: #6b7280; color: white; }
+      .id-chip { font-family: monospace; font-size: 0.75rem; color: #999; background: #f5f5f5; padding: 0.15rem 0.4rem; border-radius: 3px; }
+      .bookings-table td[data-label="Azioni"] { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+      .bookings-table td[data-label="Azioni"] .btn { margin: 0; }
+      #admin-calendar { padding: 1.25rem; }
+      .fc .fc-button-primary { background: var(--red) !important; border-color: var(--red) !important; }
+      .fc .fc-button-primary:hover { background: var(--red-dark) !important; border-color: var(--red-dark) !important; }
+
+      /* Schedule table */
+      .schedule-table { width: 100%; border-collapse: collapse; }
+      .schedule-table td { padding: 0.6rem 1rem; font-size: 0.88rem; }
+      .schedule-table select { padding: 0.35rem 0.5rem; border: 1.5px solid #ddd; border-radius: 5px; font-family: inherit; font-size: 0.88rem; background: white; }
+      .schedule-table select:focus { outline: none; border-color: var(--red); }
+      .btn-save { background: var(--red); color: white; border: none; border-radius: 6px; padding: 0.5rem 1.5rem; font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 1rem; margin-left: 1rem; margin-bottom: 1rem; }
+      .btn-save:hover { background: var(--red-dark); }
+
+      /* Detail modal */
+      .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 100; align-items: center; justify-content: center; }
+      .modal-overlay.open { display: flex; }
+      .modal { background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 460px; box-shadow: 0 8px 32px rgba(0,0,0,.18); }
+      .modal-header { border-bottom: 3px solid var(--red); padding-bottom: 0.75rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+      .modal-header h2 { font-size: 1.2rem; font-weight: 800; color: var(--red); }
+      .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #666; line-height: 1; }
+      .modal dl { display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 1rem; font-size: 0.9rem; }
+      .modal dt { font-weight: 700; color: #555; white-space: nowrap; }
+      .modal dd { color: #1a1a1a; }
+      .modal-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f0f0f0; }
+      .modal-actions .btn { font-size: 0.85rem; padding: 0.45rem 1rem; }
+
+      /* Block modal */
+      .block-modal label { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #555; margin-bottom: 0.3rem; margin-top: 0.75rem; }
+      .block-modal input[type="text"] { width: 100%; padding: 0.5rem 0.7rem; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+      .block-modal input[type="text"]:focus { outline: none; border-color: var(--red); }
+
+      /* ── Mobile ─────────────────────────────────────────────────── */
+      @media (max-width: 640px) {
+        header { padding: 0.55rem 1rem; }
+        .header-logo { height: 30px; }
+        header h1 { font-size: 0.78rem; }
+        .container { padding: 0 0.65rem; }
+
+        /* Bookings table → card stack */
+        .bookings-table, .bookings-table tbody { display: block; }
+        .bookings-table thead { display: none; }
+        .bookings-table tr {
+          display: block;
+          padding: 0.85rem 1rem;
+          border-bottom: 1px solid #eee;
+        }
+        .bookings-table tr:last-child { border-bottom: none; }
+        .bookings-table td {
+          display: grid;
+          grid-template-columns: 72px 1fr;
+          align-items: start;
+          gap: 0.2rem 0.5rem;
+          padding: 0.18rem 0;
+          border: none;
+          font-size: 0.84rem;
+        }
+        .bookings-table td::before {
+          content: attr(data-label);
+          font-weight: 700;
+          font-size: 0.68rem;
+          text-transform: uppercase;
+          color: #999;
+          letter-spacing: 0.04em;
+          padding-top: 2px;
+          white-space: nowrap;
+        }
+        .bookings-table td[data-label="ID"] { display: none; }
+        .bookings-table td[data-label="Azioni"] {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          margin-top: 0.75rem;
+        }
+        .bookings-table td[data-label="Azioni"]::before { display: none; }
+        .bookings-table td[data-label="Azioni"] .btn {
+          margin: 0;
+          padding: 0.55rem 1rem;
+          font-size: 0.88rem;
+          width: 100%;
+        }
+
+        /* Modals */
+        .modal { margin: 0.75rem; padding: 1.25rem; max-width: 100%; }
+        .modal-actions { flex-direction: column-reverse; }
+        .modal-actions .btn { width: 100%; text-align: center; padding: 0.6rem; }
+        .modal dl { grid-template-columns: 70px 1fr; }
+
+        /* Schedule table */
+        .schedule-table td { padding: 0.5rem 0.65rem; font-size: 0.82rem; }
+        .schedule-table select { font-size: 0.82rem; padding: 0.3rem 0.4rem; }
+
+        /* Calendar card padding */
+        #admin-calendar { padding: 0.65rem; }
+      }
+    </style>
+    <style is:global>
+      .fc .fc-toolbar-title { font-size: 1rem !important; font-weight: 800 !important; }
+      .fc .fc-col-header-cell-cushion { font-size: 0.8rem !important; font-weight: 700 !important; text-decoration: none !important; }
+      .fc .fc-timegrid-slot { height: 1.6rem !important; }
+      .fc .fc-timegrid-slot-label-cushion { font-size: 0.72rem !important; color: #999 !important; }
+      .fc .fc-day-today { background: rgba(200,16,46,.03) !important; }
+      .fc .fc-timegrid-event { border-radius: 3px !important; cursor: pointer !important; }
+      /* Past days: grey background + striped pattern */
+      .fc .fc-day-past { background: repeating-linear-gradient(135deg, #f3f4f6, #f3f4f6 4px, #e9eaec 4px, #e9eaec 8px) !important; opacity: 0.7; }
+      .fc .fc-col-header-cell.fc-day-past .fc-col-header-cell-cushion { color: #aaa !important; }
+      @media (max-width: 640px) {
+        .fc .fc-toolbar-title { font-size: 0.82rem !important; }
+        .fc .fc-col-header-cell-cushion { font-size: 0.68rem !important; }
+        .fc .fc-timegrid-slot-label-cushion { font-size: 0.62rem !important; }
+        .fc .fc-button { padding: 0.3rem 0.55rem !important; font-size: 0.78rem !important; }
+        .fc .fc-toolbar { gap: 0.4rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-left">
+        <img class="header-logo" src="/logo.png" alt="Basket Conselve" />
+        <h1>Admin — Prenotazioni Beach Volley</h1>
+      </div>
+      <form action="/api/admin/logout" method="post">
+        <button class="logout" type="submit">Esci</button>
+      </form>
+    </header>
+
+    <div class="container">
+
+      <!-- Pending bookings table -->
+      <div class="section-title">Prenotazioni in attesa di azione</div>
+      <div class="card">
+        <table class="bookings-table">
+          <thead>
+            <tr>
+              <th>Slot</th><th>Nome</th><th>Email</th><th>Tel.</th><th>Stato</th><th>ID</th><th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingBookings.map((b) => (
+              <tr>
+                <td data-label="Slot">{formatSlotRange(b.slot_start, b.slot_end)}</td>
+                <td data-label="Nome">{b.name}</td>
+                <td data-label="Email" style="word-break:break-all">{b.email}</td>
+                <td data-label="Tel.">{b.phone ?? '—'}</td>
+                <td data-label="Stato">{statusLabel[b.status] ?? b.status}</td>
+                <td data-label="ID"><span class="id-chip">{b.id.slice(0, 8)}</span></td>
+                <td data-label="Azioni">
+                  {b.status === 'pending' && (
+                    <>
+                      <button class="btn btn-approve" data-action="approve" data-id={b.id}>Approva</button>
+                      <button class="btn btn-reject" data-action="reject" data-id={b.id}>Rifiuta</button>
+                    </>
+                  )}
+                  {b.status === 'approved' && (
+                    <button class="btn btn-confirm" data-action="confirm-payment" data-id={b.id}>Conferma pagamento</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {pendingBookings.length === 0 && (
+              <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:1.5rem">Nessuna prenotazione in attesa</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Admin calendar -->
+      <div class="section-title">Calendario prenotazioni</div>
+      <div class="card">
+        <div id="admin-calendar"></div>
+      </div>
+
+      <!-- Schedule configuration -->
+      <div class="section-title">Orari per giorno</div>
+      <div class="card">
+        <table class="schedule-table" id="schedule-table">
+          <thead>
+            <tr>
+              <th style="padding:0.75rem 1rem">Giorno</th>
+              <th style="padding:0.75rem 1rem">Apertura</th>
+              <th style="padding:0.75rem 1rem">Chiusura</th>
+            </tr>
+          </thead>
+          <tbody>
+            {schedule.map((s) => (
+              <tr data-dow={s.day_of_week}>
+                <td><strong>{DAY_NAMES[s.day_of_week]}</strong></td>
+                <td>
+                  <select class="open-hour" data-dow={s.day_of_week}>
+                    {hours.map((h) => (
+                      <option value={h} selected={h === s.open_hour}>{String(h).padStart(2,'0')}:00</option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <select class="close-hour" data-dow={s.day_of_week}>
+                    {hours.map((h) => (
+                      <option value={h} selected={h === s.close_hour}>{String(h).padStart(2,'0')}:00</option>
+                    ))}
+                  </select>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button class="btn-save" id="save-schedule">Salva orari</button>
+      </div>
+    </div>
+
+    <!-- Booking detail modal -->
+    <div class="modal-overlay" id="detail-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Dettagli prenotazione</h2>
+          <button class="modal-close" id="detail-close">×</button>
+        </div>
+        <dl id="detail-dl"></dl>
+        <div class="modal-actions" id="detail-actions"></div>
+      </div>
+    </div>
+
+    <!-- Block slot modal -->
+    <div class="modal-overlay" id="block-modal">
+      <div class="modal block-modal">
+        <div class="modal-header">
+          <h2>Blocca slot</h2>
+          <button class="modal-close" id="block-close">×</button>
+        </div>
+        <p id="block-range-label" style="font-size:0.9rem;font-weight:600;color:var(--red);margin-bottom:0.5rem"></p>
+        <label>Motivo (opzionale)</label>
+        <input type="text" id="block-reason" placeholder="es. Maintenance" />
+        <div class="modal-actions" style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid #f0f0f0">
+          <button class="btn btn-secondary" id="block-cancel-btn">Annulla</button>
+          <button class="btn btn-approve" id="block-confirm-btn">Blocca</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      import { Calendar } from '@fullcalendar/core';
+      import timeGridPlugin from '@fullcalendar/timegrid';
+      import interactionPlugin from '@fullcalendar/interaction';
+
+      // ── Pending bookings table actions ──────────────────────────────────
+      async function apiPost(url: string) {
+        const res = await fetch(url, { method: 'POST' });
+        if (res.ok) window.location.reload();
+        else alert('Errore: ' + (await res.json()).error);
+      }
+
+      document.querySelectorAll('[data-action]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const action = (btn as HTMLElement).dataset.action!;
+          const id = (btn as HTMLElement).dataset.id!;
+          if (action === 'approve') await apiPost(`/api/admin/bookings/${id}/approve`);
+          else if (action === 'reject') await apiPost(`/api/admin/bookings/${id}/reject`);
+          else if (action === 'confirm-payment') await apiPost(`/api/admin/bookings/${id}/confirm-payment`);
+        });
+      });
+
+      // ── Helpers ─────────────────────────────────────────────────────────
+      function fmtRange(start: Date, end: Date): string {
+        const tz = 'Europe/Rome';
+        const d = start.toLocaleString('it-IT', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', timeZone: tz });
+        const t1 = start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: tz });
+        const t2 = end.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: tz });
+        return `${d}, ${t1} – ${t2}`;
+      }
+
+      function fmtDateTime(d: Date): string {
+        return d.toLocaleString('it-IT', {
+          weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome',
+        });
+      }
+
+      const STATUS_LABEL: Record<string, string> = {
+        pending: '⏳ In attesa', approved: '✅ Approvata',
+        confirmed: '💰 Confermata', rejected: '❌ Rifiutata',
+      };
+      const STATUS_COLOR: Record<string, string> = {
+        pending: '#eab308', approved: '#f97316',
+        confirmed: '#dc2626', rejected: '#9ca3af',
+      };
+
+      // ── Block modal ──────────────────────────────────────────────────────
+      let blockStart: Date | null = null;
+      let blockEnd: Date | null = null;
+
+      function openBlockModal(start: Date, end: Date) {
+        blockStart = start; blockEnd = end;
+        document.getElementById('block-range-label')!.textContent = fmtRange(start, end);
+        (document.getElementById('block-reason') as HTMLInputElement).value = '';
+        document.getElementById('block-modal')!.classList.add('open');
+      }
+
+      document.getElementById('block-close')!.addEventListener('click', () =>
+        document.getElementById('block-modal')!.classList.remove('open')
+      );
+      document.getElementById('block-cancel-btn')!.addEventListener('click', () =>
+        document.getElementById('block-modal')!.classList.remove('open')
+      );
+
+      document.getElementById('block-confirm-btn')!.addEventListener('click', async () => {
+        if (!blockStart || !blockEnd) return;
+        const reason = (document.getElementById('block-reason') as HTMLInputElement).value.trim();
+        const res = await fetch('/api/admin/blocked-slots', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot_start: blockStart.toISOString(), slot_end: blockEnd.toISOString(), reason }),
+        });
+        document.getElementById('block-modal')!.classList.remove('open');
+        if (res.ok) adminCalendar.refetchEvents();
+        else alert('Errore blocco slot');
+      });
+
+      // ── Detail modal ─────────────────────────────────────────────────────
+      function openDetailModal(ev: any) {
+        const { type, bookingId, name, email, phone, status, reason } = ev.extendedProps as {
+          type: 'booking' | 'blocked';
+          bookingId?: string; name?: string; email?: string; phone?: string;
+          status?: string; reason?: string;
+        };
+        const start: Date = ev.start;
+        const end: Date = ev.end;
+
+        const dl = document.getElementById('detail-dl')!;
+        const actions = document.getElementById('detail-actions')!;
+        dl.innerHTML = '';
+        actions.innerHTML = '';
+
+        if (type === 'booking') {
+          dl.innerHTML = `
+            <dt>Nome</dt><dd>${name ?? '—'}</dd>
+            <dt>Email</dt><dd>${email ?? '—'}</dd>
+            <dt>Telefono</dt><dd>${phone ?? '—'}</dd>
+            <dt>Slot</dt><dd>${fmtRange(start, end)}</dd>
+            <dt>Stato</dt><dd>${STATUS_LABEL[status!] ?? status}</dd>
+            <dt>ID</dt><dd><code style="font-size:0.8rem">${bookingId!.slice(0,8)}</code></dd>
+          `;
+
+          if (status === 'pending') {
+            const approveBtn = document.createElement('button');
+            approveBtn.className = 'btn btn-approve'; approveBtn.textContent = 'Approva';
+            approveBtn.onclick = () => apiPost(`/api/admin/bookings/${bookingId}/approve`);
+            const rejectBtn = document.createElement('button');
+            rejectBtn.className = 'btn btn-reject'; rejectBtn.textContent = 'Rifiuta';
+            rejectBtn.onclick = () => apiPost(`/api/admin/bookings/${bookingId}/reject`);
+            actions.append(approveBtn, rejectBtn);
+          } else if (status === 'approved') {
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'btn btn-confirm'; confirmBtn.textContent = 'Conferma pagamento';
+            confirmBtn.onclick = () => apiPost(`/api/admin/bookings/${bookingId}/confirm-payment`);
+            actions.appendChild(confirmBtn);
+          }
+
+          // Cancel button (only for future bookings)
+          if (start > new Date()) {
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn btn-danger'; cancelBtn.textContent = 'Cancella prenotazione';
+            cancelBtn.onclick = async () => {
+              if (!confirm(`Cancellare la prenotazione di ${name}?`)) return;
+              const res = await fetch(`/api/admin/bookings/${bookingId}`, { method: 'DELETE' });
+              document.getElementById('detail-modal')!.classList.remove('open');
+              if (res.ok) adminCalendar.refetchEvents();
+              else alert('Errore cancellazione');
+            };
+            actions.appendChild(cancelBtn);
+          }
+
+        } else {
+          dl.innerHTML = `
+            <dt>Slot</dt><dd>${fmtRange(start, end)}</dd>
+            <dt>Motivo</dt><dd>${reason ?? '—'}</dd>
+          `;
+          const unblockBtn = document.createElement('button');
+          unblockBtn.className = 'btn btn-secondary'; unblockBtn.textContent = 'Sblocca';
+          unblockBtn.onclick = async () => {
+            const res = await fetch(`/api/admin/blocked-slots/${bookingId}`, { method: 'DELETE' });
+            document.getElementById('detail-modal')!.classList.remove('open');
+            if (res.ok) adminCalendar.refetchEvents();
+          };
+          actions.appendChild(unblockBtn);
+        }
+
+        document.getElementById('detail-modal')!.classList.add('open');
+      }
+
+      document.getElementById('detail-close')!.addEventListener('click', () =>
+        document.getElementById('detail-modal')!.classList.remove('open')
+      );
+
+      // ── Admin Calendar ────────────────────────────────────────────────────
+      const isMobile = () => window.innerWidth < 640;
+
+      const adminCalendar = new Calendar(document.getElementById('admin-calendar')!, {
+        plugins: [timeGridPlugin, interactionPlugin],
+        initialView: isMobile() ? 'timeGrid3' : 'timeGrid7',
+        initialDate: new Date(),
+        locale: 'it',
+        views: {
+          timeGrid7: { type: 'timeGrid', duration: { days: 7 } },
+          timeGrid3: { type: 'timeGrid', duration: { days: 3 } },
+        },
+        windowResize: () => {
+          const target = isMobile() ? 'timeGrid3' : 'timeGrid7';
+          if (adminCalendar.view.type !== target) adminCalendar.changeView(target);
+        },
+        buttonText: { today: 'Oggi' },
+        headerToolbar: { left: 'title', center: '', right: 'today prev,next' },
+        nowIndicator: true,
+        slotDuration: '00:30:00',
+        slotMinTime: '16:00:00',
+        slotMaxTime: '23:00:00',
+        allDaySlot: false,
+        height: 'auto',
+        selectable: true,
+        selectAllow: (info) => {
+          // Must be in the future
+          if (info.start < new Date()) return false;
+          // Must be same day
+          const endMinus30 = new Date(info.end.getTime() - 30 * 60 * 1000);
+          if (info.start.toDateString() !== endMinus30.toDateString()) return false;
+          // Must not overlap existing events
+          const evs = adminCalendar.getEvents();
+          let cur = new Date(info.start);
+          while (cur < info.end) {
+            const overlap = evs.find(
+              (e) => e.start! < new Date(cur.getTime() + 30 * 60 * 1000) && e.end! > cur
+            );
+            if (overlap) return false;
+            cur = new Date(cur.getTime() + 30 * 60 * 1000);
+          }
+          return true;
+        },
+        select: (info) => {
+          adminCalendar.unselect();
+          openBlockModal(info.start, info.end);
+        },
+        eventClick: (info) => openDetailModal(info.event),
+        events: async (info) => {
+          const from = info.startStr.slice(0, 10);
+          const to = info.endStr.slice(0, 10);
+          const res = await fetch(`/api/admin/calendar-events?from=${from}&to=${to}`);
+          return res.json();
+        },
+      });
+
+      adminCalendar.render();
+
+      // ── Schedule save ─────────────────────────────────────────────────────
+      document.getElementById('save-schedule')!.addEventListener('click', async () => {
+        const rows = document.querySelectorAll('#schedule-table tbody tr[data-dow]');
+        const schedules = Array.from(rows).map((row) => {
+          const dow = Number((row as HTMLElement).dataset.dow);
+          const open = Number((row.querySelector('.open-hour') as HTMLSelectElement).value);
+          const close = Number((row.querySelector('.close-hour') as HTMLSelectElement).value);
+          return { day_of_week: dow, open_hour: open, close_hour: close };
+        });
+
+        const res = await fetch('/api/admin/schedule', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ schedules }),
+        });
+
+        if (res.ok) {
+          adminCalendar.refetchEvents();
+          alert('Orari salvati');
+        } else {
+          alert('Errore salvataggio orari');
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,57 @@
+---
+---
+
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Login — Basket Conselve</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+      :root { --red: #C8102E; --red-dark: #a00e25; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Inter', system-ui, sans-serif; background: #f0f0f0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+      .logo { font-size: 2.5rem; font-weight: 800; color: var(--red); letter-spacing: -2px; margin-bottom: 0.25rem; }
+      .subtitle { font-size: 0.9rem; color: #666; margin-bottom: 2rem; }
+      .card { background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 360px; box-shadow: 0 4px 16px rgba(0,0,0,.1); border-top: 4px solid var(--red); }
+      h1 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center; color: #333; }
+      label { display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #555; margin-bottom: 0.3rem; }
+      input { width: 100%; padding: 0.55rem 0.8rem; border: 1.5px solid #ddd; border-radius: 7px; font-size: 1rem; margin-bottom: 1rem; font-family: inherit; transition: border-color 0.15s; }
+      input:focus { outline: none; border-color: var(--red); }
+      button { width: 100%; padding: 0.65rem; background: var(--red); color: white; border: none; border-radius: 7px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+      button:hover { background: var(--red-dark); }
+      .error { color: #dc2626; font-size: 0.85rem; margin-bottom: 0.75rem; }
+    </style>
+  </head>
+  <body>
+    <div class="logo">BC</div>
+    <div class="subtitle">Basket Conselve ASD — Area Admin</div>
+    <div class="card">
+      <h1>Accesso riservato</h1>
+      <div class="error" id="err" style="display:none"></div>
+      <label for="password">Password</label>
+      <input id="password" type="password" />
+      <button id="login-btn">Accedi</button>
+    </div>
+    <script>
+      document.getElementById('login-btn')!.addEventListener('click', async () => {
+        const password = (document.getElementById('password') as HTMLInputElement).value;
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        if (res.ok) {
+          window.location.href = '/admin';
+        } else {
+          const err = document.getElementById('err')!;
+          err.textContent = 'Password errata.';
+          err.style.display = 'block';
+        }
+      });
+      document.getElementById('password')!.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('login-btn')!.click();
+      });
+    </script>
+  </body>
+</html>
