@@ -12,6 +12,9 @@ const colorMap: Record<DisplayState, string> = {
 
 const MOCK_STATES: Record<number, { state: DisplayState; reason?: string }> = {
   4:  { state: 'reserved' },
+  6:  { state: 'booked' },   // gap test: 6 booked
+  // 7 stays available — this is the "trapped" 30-min slot
+  8:  { state: 'booked' },   // gap test: 8 booked
   10: { state: 'booked' },
   18: { state: 'blocked', reason: 'Maintenance' },
   25: { state: 'reserved' },

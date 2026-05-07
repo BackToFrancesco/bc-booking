@@ -59,8 +59,18 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       .header-left { display: flex; align-items: center; gap: 0.75rem; }
       .header-logo { height: 36px; width: auto; display: block; }
       header h1 { font-size: 1rem; font-weight: 600; opacity: 0.92; }
-      .logout { background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.3); color: white; padding: 0.35rem 0.9rem; border-radius: 6px; cursor: pointer; font-size: 0.88rem; font-weight: 600; font-family: inherit; transition: background 0.15s; }
-      .logout:hover { background: rgba(255,255,255,.35); }
+      .logout {
+        background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.3); color: white;
+        padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;
+        font-size: 0.88rem; font-weight: 600; font-family: inherit;
+        transition: background 0.1s, transform 0.1s;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      @media (hover: hover) {
+        .logout:hover { background: rgba(255,255,255,.35); }
+      }
+      .logout:active { background: rgba(255,255,255,.45); transform: scale(0.96); }
       .container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
       .section-title { font-size: 1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--red); margin-bottom: 0.75rem; padding-left: 0.5rem; border-left: 3px solid var(--red); }
       .card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.07); margin-bottom: 2rem; overflow: hidden; }
@@ -68,26 +78,74 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       th, td { padding: 0.7rem 1rem; text-align: left; font-size: 0.86rem; border-bottom: 1px solid #f0f0f0; }
       th { background: #fafafa; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: #666; }
       tr:last-child td { border-bottom: none; }
-      .btn { padding: 0.3rem 0.8rem; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; margin-right: 0.3rem; font-family: inherit; }
+      .btn {
+        padding: 0.45rem 0.95rem; border: none; border-radius: 5px; cursor: pointer;
+        font-size: 0.85rem; font-weight: 600; margin-right: 0.3rem; font-family: inherit;
+        transition: background 0.1s, filter 0.1s, transform 0.1s;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      .btn-primary { background: var(--red); color: white; }
       .btn-approve { background: #22c55e; color: white; }
       .btn-reject { background: #ef4444; color: white; }
       .btn-confirm { background: #3b82f6; color: white; }
       .btn-danger { background: #dc2626; color: white; }
-      .btn-secondary { background: #6b7280; color: white; }
+      .btn-secondary { background: #e5e7eb; color: #1f2937; }
+      .btn:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; filter: none !important; }
+      .btn:disabled:active { transform: none !important; }
+      @media (hover: hover) {
+        .btn-primary:hover { background: var(--red-dark); }
+        .btn-secondary:hover { background: #d1d5db; }
+        .btn-approve:hover { filter: brightness(0.92); }
+        .btn-reject:hover { filter: brightness(0.92); }
+        .btn-confirm:hover { filter: brightness(0.92); }
+        .btn-danger:hover { filter: brightness(0.92); }
+      }
+      .btn:active { transform: scale(0.96); }
+      .btn-primary:active { background: var(--red-dark); }
+      .btn-secondary:active { background: #b8bdc4; }
+      .btn-approve:active,
+      .btn-reject:active,
+      .btn-confirm:active,
+      .btn-danger:active { filter: brightness(0.85); }
       .id-chip { font-family: monospace; font-size: 0.75rem; color: #999; background: #f5f5f5; padding: 0.15rem 0.4rem; border-radius: 3px; }
-      .bookings-table td[data-label="Azioni"] { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-      .bookings-table td[data-label="Azioni"] .btn { margin: 0; }
+      .bookings-table td[data-label="Azioni"] .btn {
+        display: block;
+        width: 100%;
+        margin: 0 0 0.4rem 0;
+        text-align: center;
+      }
+      .bookings-table td[data-label="Azioni"] .btn:last-child { margin-bottom: 0; }
       #admin-calendar { padding: 1.25rem; }
-      .fc .fc-button-primary { background: var(--red) !important; border-color: var(--red) !important; }
-      .fc .fc-button-primary:hover { background: var(--red-dark) !important; border-color: var(--red-dark) !important; }
+      .fc .fc-button-primary {
+        background: var(--red) !important; border-color: var(--red) !important;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        transition: background 0.1s, transform 0.1s !important;
+      }
+      @media (hover: hover) {
+        .fc .fc-button-primary:hover { background: var(--red-dark) !important; border-color: var(--red-dark) !important; }
+      }
+      .fc .fc-button-primary:not(:disabled):active { background: var(--red-dark) !important; border-color: var(--red-dark) !important; transform: scale(0.96); }
 
       /* Schedule table */
       .schedule-table { width: 100%; border-collapse: collapse; }
       .schedule-table td { padding: 0.6rem 1rem; font-size: 0.88rem; }
       .schedule-table select { padding: 0.35rem 0.5rem; border: 1.5px solid #ddd; border-radius: 5px; font-family: inherit; font-size: 0.88rem; background: white; }
       .schedule-table select:focus { outline: none; border-color: var(--red); }
-      .btn-save { background: var(--red); color: white; border: none; border-radius: 6px; padding: 0.5rem 1.5rem; font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 1rem; margin-left: 1rem; margin-bottom: 1rem; }
-      .btn-save:hover { background: var(--red-dark); }
+      .btn-save {
+        background: var(--red); color: white; border: none; border-radius: 6px;
+        padding: 0.7rem 1.6rem; font-size: 0.95rem; font-weight: 700;
+        cursor: pointer; font-family: inherit;
+        margin-top: 1rem; margin-left: 1rem; margin-bottom: 1rem;
+        transition: background 0.1s, transform 0.1s;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      @media (hover: hover) {
+        .btn-save:hover { background: var(--red-dark); }
+      }
+      .btn-save:active { background: var(--red-dark); transform: scale(0.97); }
 
       /* Detail modal */
       .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 100; align-items: center; justify-content: center; }
@@ -95,12 +153,33 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       .modal { background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 460px; box-shadow: 0 8px 32px rgba(0,0,0,.18); }
       .modal-header { border-bottom: 3px solid var(--red); padding-bottom: 0.75rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; }
       .modal-header h2 { font-size: 1.2rem; font-weight: 800; color: var(--red); }
-      .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #666; line-height: 1; }
-      .modal dl { display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 1rem; font-size: 0.9rem; }
+      .modal-close {
+        background: none; border: none; font-size: 1.6rem; cursor: pointer; color: #666;
+        line-height: 1; width: 40px; height: 40px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: background 0.1s;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      @media (hover: hover) {
+        .modal-close:hover { background: #f0f0f0; }
+      }
+      .modal-close:active { background: #e0e0e0; }
+      .modal dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.4rem 1rem; font-size: 0.9rem; align-items: center; }
       .modal dt { font-weight: 700; color: #555; white-space: nowrap; }
-      .modal dd { color: #1a1a1a; }
+      .modal dd { color: #1a1a1a; min-width: 0; overflow: hidden; }
       .modal-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f0f0f0; }
-      .modal-actions .btn { font-size: 0.85rem; padding: 0.45rem 1rem; }
+      .modal-actions .btn { font-size: 0.88rem; padding: 0.45rem 1rem; border-radius: 6px; }
+      .detail-input { padding: 0.4rem 0.6rem; border: 1.5px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 0.9rem; background: white; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
+      .detail-input:focus { outline: none; border-color: var(--red); }
+      .detail-input:disabled { background: #f5f5f5; color: #1a1a1a; cursor: default; -webkit-text-fill-color: #1a1a1a; opacity: 1; }
+      .notify-help { font-size: 0.8rem; color: #666; margin-top: 0.2rem; line-height: 1.35; }
+      .detail-summary { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 4px; padding: 0.55rem 0.8rem; margin: 0.75rem 0 0; font-size: 0.85rem; color: #444; }
+      .error-msg { color: #dc2626; font-size: 0.85rem; margin-top: 0.5rem; }
+      .detail-edit-row { flex-direction: column !important; align-items: stretch !important; }
+      .notify-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: #444; }
+      .notify-label input[type="checkbox"] { width: 1rem; height: 1rem; accent-color: var(--red); }
+      .edit-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }
 
       /* Block modal */
       .block-modal label { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #555; margin-bottom: 0.3rem; margin-top: 0.75rem; }
@@ -115,14 +194,17 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         .container { padding: 0 0.65rem; }
 
         /* Bookings table → card stack */
-        .bookings-table, .bookings-table tbody { display: block; }
+        .bookings-table { display: block; border-collapse: separate; }
+        .bookings-table tbody { display: block; }
         .bookings-table thead { display: none; }
         .bookings-table tr {
           display: block;
           padding: 0.85rem 1rem;
-          border-bottom: 1px solid #eee;
+          border-bottom: none;
         }
-        .bookings-table tr:last-child { border-bottom: none; }
+        .bookings-table tr + tr {
+          border-top: 2px solid #e0e0e0;
+        }
         .bookings-table td {
           display: grid;
           grid-template-columns: 72px 1fr;
@@ -152,26 +234,86 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         .bookings-table td[data-label="Azioni"]::before { display: none; }
         .bookings-table td[data-label="Azioni"] .btn {
           margin: 0;
-          padding: 0.55rem 1rem;
-          font-size: 0.88rem;
+          padding: 0.65rem 1rem;
+          font-size: 0.92rem;
           width: 100%;
+          min-height: 44px;
         }
 
         /* Modals */
         .modal { margin: 0.75rem; padding: 1.25rem; max-width: 100%; }
         .modal-actions { flex-direction: column-reverse; }
-        .modal-actions .btn { width: 100%; text-align: center; padding: 0.6rem; }
-        .modal dl { grid-template-columns: 70px 1fr; }
+        .modal-actions .btn { width: 100%; text-align: center; padding: 0.9rem; font-size: 0.95rem; min-height: 48px; }
+        .modal dl { grid-template-columns: 1fr; gap: 0.15rem; }
+        .modal dt { padding-top: 0.6rem; }
+        .modal dt:first-of-type { padding-top: 0; }
+        .modal dd { padding-bottom: 0.1rem; }
 
         /* Schedule table */
         .schedule-table td { padding: 0.5rem 0.65rem; font-size: 0.82rem; }
-        .schedule-table select { font-size: 0.82rem; padding: 0.3rem 0.4rem; }
+        .schedule-table select { font-size: 0.95rem; padding: 0.55rem 0.5rem; min-height: 40px; }
+        .btn-save { width: calc(100% - 2rem); padding: 0.95rem; font-size: 1rem; min-height: 48px; }
+
+        .logout { padding: 0.6rem 1rem; min-height: 40px; }
 
         /* Calendar card padding */
         #admin-calendar { padding: 0.65rem; }
       }
     </style>
     <style is:global>
+      /* Suppress td borders on mobile (prevents double-separator artifact) */
+      @media (max-width: 640px) {
+        .bookings-table td { border: none !important; }
+      }
+
+      /* Button colors for JS-created elements */
+      .btn-primary { background: #C8102E; color: white; }
+      .btn-approve { background: #22c55e; color: white; }
+      .btn-reject { background: #ef4444; color: white; }
+      .btn-confirm { background: #3b82f6; color: white; }
+      .btn-danger { background: #dc2626; color: white; }
+      .btn-secondary { background: #e5e7eb; color: #1f2937; }
+
+
+      /* Hover/cursor for JS-created buttons */
+      .modal-actions .btn { cursor: pointer; }
+      @media (hover: hover) {
+        .modal-actions .btn-primary:hover { background: #a00e25; }
+        .modal-actions .btn-secondary:hover { background: #d1d5db; }
+        .modal-actions .btn-approve:hover { filter: brightness(0.92); }
+        .modal-actions .btn-reject:hover { filter: brightness(0.92); }
+        .modal-actions .btn-confirm:hover { filter: brightness(0.92); }
+        .modal-actions .btn-danger:hover { filter: brightness(0.92); }
+      }
+
+      /* Buttons created via JS (detail modal) need global scope */
+      .modal-actions .btn {
+        font-size: 0.88rem !important;
+        padding: 0.45rem 1rem !important;
+        min-height: unset !important;
+        border: none !important;
+        border-radius: 6px !important;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        transition: background 0.1s, filter 0.1s, transform 0.1s !important;
+      }
+      .modal-actions .btn:active { transform: scale(0.96) !important; }
+      .modal-actions .btn-primary:active { background: #a00e25 !important; }
+      .modal-actions .btn-secondary:active { background: #b8bdc4 !important; }
+      .modal-actions .btn-approve:active,
+      .modal-actions .btn-reject:active,
+      .modal-actions .btn-confirm:active,
+      .modal-actions .btn-danger:active { filter: brightness(0.85) !important; }
+      @media (max-width: 640px) {
+        .modal-actions .btn {
+          width: 100% !important;
+          text-align: center !important;
+          padding: 0.75rem 1rem !important;
+          font-size: 0.92rem !important;
+          min-height: 44px !important;
+        }
+      }
+
       .fc .fc-toolbar-title { font-size: 1rem !important; font-weight: 800 !important; }
       .fc .fc-col-header-cell-cushion { font-size: 0.8rem !important; font-weight: 700 !important; text-decoration: none !important; }
       .fc .fc-timegrid-slot { height: 1.6rem !important; }
@@ -185,7 +327,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         .fc .fc-toolbar-title { font-size: 0.82rem !important; }
         .fc .fc-col-header-cell-cushion { font-size: 0.68rem !important; }
         .fc .fc-timegrid-slot-label-cushion { font-size: 0.62rem !important; }
-        .fc .fc-button { padding: 0.3rem 0.55rem !important; font-size: 0.78rem !important; }
+        .fc .fc-button { padding: 0.5rem 0.75rem !important; font-size: 0.85rem !important; min-height: 40px; }
         .fc .fc-toolbar { gap: 0.4rem; }
       }
     </style>
@@ -288,11 +430,50 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
     <div class="modal-overlay" id="detail-modal">
       <div class="modal">
         <div class="modal-header">
-          <h2>Dettagli prenotazione</h2>
+          <h2 id="detail-title">Dettagli prenotazione</h2>
           <button class="modal-close" id="detail-close">×</button>
         </div>
-        <dl id="detail-dl"></dl>
+
+        <dl id="detail-booking-fields">
+          <dt>Nome</dt><dd id="detail-name">—</dd>
+          <dt>Email</dt><dd id="detail-email" style="word-break:break-all">—</dd>
+          <dt>Telefono</dt><dd id="detail-phone">—</dd>
+          <dt>Stato</dt>
+          <dd>
+            <select id="detail-status" class="detail-input" disabled>
+              <option value="pending">⏳ In attesa</option>
+              <option value="approved">✅ Approvata</option>
+              <option value="confirmed">💰 Confermata</option>
+              <option value="rejected">❌ Rifiutata</option>
+            </select>
+          </dd>
+          <dt>Inizio</dt>
+          <dd><input type="datetime-local" id="detail-start" class="detail-input" step="1800" disabled /></dd>
+          <dt>Fine</dt>
+          <dd><input type="datetime-local" id="detail-end" class="detail-input" step="1800" disabled /></dd>
+          <dt>ID</dt><dd><code id="detail-id" style="font-size:0.8rem">—</code></dd>
+        </dl>
+
+        <dl id="detail-blocked-fields" style="display:none">
+          <dt>Slot</dt><dd id="detail-blocked-range">—</dd>
+          <dt>Motivo</dt><dd id="detail-blocked-reason">—</dd>
+        </dl>
+
+        <div id="detail-error" class="error-msg" style="display:none"></div>
+
         <div class="modal-actions" id="detail-actions"></div>
+        <div class="modal-actions detail-edit-row" id="detail-edit-actions" style="display:none">
+          <div>
+            <label class="notify-label">
+              <input type="checkbox" id="detail-notify" checked disabled /> Invia email all'utente con le modifiche
+            </label>
+            <div class="notify-help" id="detail-notify-help">Se attivo, riceverà una email con il nuovo stato/orario.</div>
+          </div>
+          <div class="edit-buttons">
+            <button class="btn btn-secondary" id="detail-cancel-edit">Annulla</button>
+            <button class="btn btn-primary" id="detail-save" disabled>Salva</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -308,7 +489,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         <input type="text" id="block-reason" placeholder="es. Maintenance" />
         <div class="modal-actions" style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid #f0f0f0">
           <button class="btn btn-secondary" id="block-cancel-btn">Annulla</button>
-          <button class="btn btn-approve" id="block-confirm-btn">Blocca</button>
+          <button class="btn btn-primary" id="block-confirm-btn">Blocca</button>
         </div>
       </div>
     </div>
@@ -392,6 +573,77 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       });
 
       // ── Detail modal ─────────────────────────────────────────────────────
+      function toLocalInput(d: Date): string {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+
+      type DetailState = {
+        bookingId: string;
+        name: string;
+        originalStatus: string;
+        originalStart: Date;
+        originalEnd: Date;
+        editing: boolean;
+      } | null;
+      let detail: DetailState = null;
+
+      function setEditMode(editing: boolean) {
+        if (!detail) return;
+        detail.editing = editing;
+        const status = document.getElementById('detail-status') as HTMLSelectElement;
+        const start = document.getElementById('detail-start') as HTMLInputElement;
+        const end = document.getElementById('detail-end') as HTMLInputElement;
+        status.disabled = !editing;
+        start.disabled = !editing;
+        end.disabled = !editing;
+
+        document.getElementById('detail-actions')!.style.display = editing ? 'none' : 'flex';
+        document.getElementById('detail-edit-actions')!.style.display = editing ? 'flex' : 'none';
+        document.getElementById('detail-error')!.style.display = 'none';
+
+        if (editing) {
+          updateEditSummary();
+        } else {
+          // Reset values to originals
+          status.value = detail.originalStatus;
+          start.value = toLocalInput(detail.originalStart);
+          end.value = toLocalInput(detail.originalEnd);
+          (document.getElementById('detail-save') as HTMLButtonElement).disabled = true;
+          (document.getElementById('detail-notify') as HTMLInputElement).disabled = true;
+        }
+      }
+
+      function updateEditSummary() {
+        if (!detail) return;
+        const status = (document.getElementById('detail-status') as HTMLSelectElement).value;
+        const startVal = (document.getElementById('detail-start') as HTMLInputElement).value;
+        const endVal = (document.getElementById('detail-end') as HTMLInputElement).value;
+        const newStart = startVal ? new Date(startVal) : detail.originalStart;
+        const newEnd = endVal ? new Date(endVal) : detail.originalEnd;
+
+        const statusChanged = status !== detail.originalStatus;
+        const timeChanged =
+          newStart.getTime() !== detail.originalStart.getTime() ||
+          newEnd.getTime() !== detail.originalEnd.getTime();
+        const hasChanges = statusChanged || timeChanged;
+
+        (document.getElementById('detail-save') as HTMLButtonElement).disabled = !hasChanges;
+        (document.getElementById('detail-notify') as HTMLInputElement).disabled = !hasChanges;
+
+        const helpEl = document.getElementById('detail-notify-help')!;
+        if (!hasChanges) {
+          helpEl.textContent = 'Nessuna modifica da salvare.';
+        } else if (statusChanged) {
+          if (status === 'approved') helpEl.textContent = 'Verrà inviata l\'email "Prenotazione approvata" con il link PayPal.';
+          else if (status === 'confirmed') helpEl.textContent = 'Verrà inviata l\'email "Pagamento confermato".';
+          else if (status === 'rejected') helpEl.textContent = 'Verrà inviata l\'email "Aggiornamento prenotazione" (rifiuto).';
+          else helpEl.textContent = 'Nessuna email per lo stato "pending" (cambio silenzioso).';
+        } else {
+          helpEl.textContent = 'Verrà inviata l\'email "Orario aggiornato" con vecchio e nuovo orario.';
+        }
+      }
+
       function openDetailModal(ev: any) {
         const { type, bookingId, name, email, phone, status, reason } = ev.extendedProps as {
           type: 'booking' | 'blocked';
@@ -401,21 +653,43 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         const start: Date = ev.start;
         const end: Date = ev.end;
 
-        const dl = document.getElementById('detail-dl')!;
+        const bookingFields = document.getElementById('detail-booking-fields')!;
+        const blockedFields = document.getElementById('detail-blocked-fields')!;
         const actions = document.getElementById('detail-actions')!;
-        dl.innerHTML = '';
+        const title = document.getElementById('detail-title')!;
         actions.innerHTML = '';
+        document.getElementById('detail-error')!.style.display = 'none';
+        document.getElementById('detail-edit-actions')!.style.display = 'none';
+        actions.style.display = 'flex';
 
         if (type === 'booking') {
-          dl.innerHTML = `
-            <dt>Nome</dt><dd>${name ?? '—'}</dd>
-            <dt>Email</dt><dd>${email ?? '—'}</dd>
-            <dt>Telefono</dt><dd>${phone ?? '—'}</dd>
-            <dt>Slot</dt><dd>${fmtRange(start, end)}</dd>
-            <dt>Stato</dt><dd>${STATUS_LABEL[status!] ?? status}</dd>
-            <dt>ID</dt><dd><code style="font-size:0.8rem">${bookingId!.slice(0,8)}</code></dd>
-          `;
+          title.textContent = 'Dettagli prenotazione';
+          bookingFields.style.display = '';
+          blockedFields.style.display = 'none';
 
+          document.getElementById('detail-name')!.textContent = name ?? '—';
+          document.getElementById('detail-email')!.textContent = email ?? '—';
+          document.getElementById('detail-phone')!.textContent = phone ?? '—';
+          document.getElementById('detail-id')!.textContent = bookingId!.slice(0, 8);
+
+          const statusSel = document.getElementById('detail-status') as HTMLSelectElement;
+          const startInp = document.getElementById('detail-start') as HTMLInputElement;
+          const endInp = document.getElementById('detail-end') as HTMLInputElement;
+          statusSel.value = status!;
+          startInp.value = toLocalInput(start);
+          endInp.value = toLocalInput(end);
+
+          detail = {
+            bookingId: bookingId!,
+            name: name ?? '',
+            originalStatus: status!,
+            originalStart: start,
+            originalEnd: end,
+            editing: false,
+          };
+          setEditMode(false);
+
+          // Workflow buttons
           if (status === 'pending') {
             const approveBtn = document.createElement('button');
             approveBtn.className = 'btn btn-approve'; approveBtn.textContent = 'Approva';
@@ -431,7 +705,13 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
             actions.appendChild(confirmBtn);
           }
 
-          // Cancel button (only for future bookings)
+          // Modifica button (always available)
+          const editBtn = document.createElement('button');
+          editBtn.className = 'btn btn-secondary'; editBtn.textContent = 'Modifica';
+          editBtn.onclick = () => setEditMode(true);
+          actions.appendChild(editBtn);
+
+          // Cancel booking (only future)
           if (start > new Date()) {
             const cancelBtn = document.createElement('button');
             cancelBtn.className = 'btn btn-danger'; cancelBtn.textContent = 'Cancella prenotazione';
@@ -444,12 +724,15 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
             };
             actions.appendChild(cancelBtn);
           }
-
         } else {
-          dl.innerHTML = `
-            <dt>Slot</dt><dd>${fmtRange(start, end)}</dd>
-            <dt>Motivo</dt><dd>${reason ?? '—'}</dd>
-          `;
+          title.textContent = 'Dettagli blocco';
+          bookingFields.style.display = 'none';
+          blockedFields.style.display = '';
+          document.getElementById('detail-blocked-range')!.textContent = fmtRange(start, end);
+          document.getElementById('detail-blocked-reason')!.textContent = reason ?? '—';
+
+          detail = null;
+
           const unblockBtn = document.createElement('button');
           unblockBtn.className = 'btn btn-secondary'; unblockBtn.textContent = 'Sblocca';
           unblockBtn.onclick = async () => {
@@ -462,6 +745,85 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
 
         document.getElementById('detail-modal')!.classList.add('open');
       }
+
+      // Live-update summary while editing
+      ['detail-status', 'detail-start', 'detail-end'].forEach((id) => {
+        document.getElementById(id)!.addEventListener('change', updateEditSummary);
+      });
+
+      document.getElementById('detail-cancel-edit')!.addEventListener('click', () => setEditMode(false));
+
+      document.getElementById('detail-save')!.addEventListener('click', async () => {
+        if (!detail) return;
+        const errEl = document.getElementById('detail-error')!;
+        errEl.style.display = 'none';
+
+        const newStatus = (document.getElementById('detail-status') as HTMLSelectElement).value;
+        const newStartVal = (document.getElementById('detail-start') as HTMLInputElement).value;
+        const newEndVal = (document.getElementById('detail-end') as HTMLInputElement).value;
+        if (!newStartVal || !newEndVal) {
+          errEl.textContent = 'Inserisci inizio e fine validi.';
+          errEl.style.display = 'block';
+          return;
+        }
+        const newStart = new Date(newStartVal);
+        const newEnd = new Date(newEndVal);
+        if (newEnd <= newStart) {
+          errEl.textContent = 'L\'orario di fine deve essere dopo l\'inizio.';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        const statusChanged = newStatus !== detail.originalStatus;
+        const timeChanged =
+          newStart.getTime() !== detail.originalStart.getTime() ||
+          newEnd.getTime() !== detail.originalEnd.getTime();
+
+        if (!statusChanged && !timeChanged) {
+          setEditMode(false);
+          return;
+        }
+
+        // Confirm destructive transitions
+        const destructive =
+          (detail.originalStatus === 'confirmed' && newStatus === 'rejected') ||
+          (detail.originalStatus === 'approved' && newStatus === 'rejected') ||
+          (detail.originalStatus === 'confirmed' && newStatus === 'pending') ||
+          (detail.originalStatus === 'confirmed' && newStatus === 'approved');
+        if (destructive) {
+          if (!confirm(`Stai cambiando lo stato da "${detail.originalStatus}" a "${newStatus}". Continuare?`)) {
+            return;
+          }
+        }
+
+        const notify = (document.getElementById('detail-notify') as HTMLInputElement).checked;
+        const body: Record<string, unknown> = { notify };
+        if (statusChanged) body.status = newStatus;
+        if (timeChanged) {
+          body.slot_start = newStart.toISOString();
+          body.slot_end = newEnd.toISOString();
+        }
+
+        const saveBtn = document.getElementById('detail-save') as HTMLButtonElement;
+        saveBtn.disabled = true; saveBtn.textContent = 'Salvataggio…';
+
+        const res = await fetch(`/api/admin/bookings/${detail.bookingId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        saveBtn.disabled = false; saveBtn.textContent = 'Salva';
+
+        if (res.ok) {
+          document.getElementById('detail-modal')!.classList.remove('open');
+          adminCalendar.refetchEvents();
+        } else {
+          const data = await res.json().catch(() => ({}));
+          errEl.textContent = data.error ?? 'Errore durante il salvataggio.';
+          errEl.style.display = 'block';
+        }
+      });
 
       document.getElementById('detail-close')!.addEventListener('click', () =>
         document.getElementById('detail-modal')!.classList.remove('open')
@@ -490,7 +852,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         slotMinTime: '16:00:00',
         slotMaxTime: '23:00:00',
         allDaySlot: false,
-        height: 'auto',
+        height: 520,
         selectable: true,
         selectAllow: (info) => {
           // Must be in the future

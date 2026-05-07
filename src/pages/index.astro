@@ -51,9 +51,9 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         left: 50%; top: 50%;
         transform: translate(-50%, -50%);
         text-align: center;
-        max-width: calc(100% - 2rem);
+        max-width: calc(100% - 1rem);
         z-index: 2;
-        padding: 0 1rem;
+        padding: 0 0.5rem;
       }
       .hero-card h1 {
         font-size: 2.2rem;
@@ -70,8 +70,14 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 2px 12px rgba(0,0,0,0.6);
       }
       @media (max-width: 640px) {
-        .page-hero { height: 260px; }
-        .hero-card h1 { font-size: 1.45rem; }
+        .page-hero { height: 240px; }
+        .hero-card { padding: 0 0.25rem; max-width: 100%; width: 100%; }
+        .hero-card h1 { font-size: 2.2rem; line-height: 1.1; }
+        .hero-card p { font-size: 1rem; margin-top: 0.5rem; }
+      }
+      @media (max-width: 400px) {
+        .page-hero { height: 200px; }
+        .hero-card h1 { font-size: 1.85rem; }
         .hero-card p { font-size: 0.9rem; }
       }
 
@@ -108,17 +114,22 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         align-self: flex-start;
         background: var(--red);
         color: white;
-        padding: 0.4rem 0.9rem;
+        padding: 0.55rem 1rem;
         border-radius: 6px;
         text-decoration: none;
-        font-size: 0.85rem;
+        font-size: 0.88rem;
         font-weight: 600;
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
-        transition: background 0.15s;
+        transition: background 0.1s, transform 0.1s;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
-      .btn-maps:hover { background: var(--red-dark); }
+      @media (hover: hover) {
+        .btn-maps:hover { background: var(--red-dark); }
+      }
+      .btn-maps:active { background: var(--red-dark); transform: scale(0.96); }
       @media (max-width: 640px) {
         .info-row { grid-template-columns: 1fr; }
       }
@@ -173,22 +184,40 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       .dot { width: 12px; height: 12px; border-radius: 50%; }
       #calendar { background: white; border-radius: 10px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
 
-      .fc .fc-button-primary { background: var(--red) !important; border-color: var(--red) !important; }
-      .fc .fc-button-primary:hover { background: var(--red-dark) !important; border-color: var(--red-dark) !important; }
+      .fc .fc-button-primary {
+        background: var(--red) !important; border-color: var(--red) !important;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        transition: background 0.1s, transform 0.1s !important;
+      }
+      @media (hover: hover) {
+        .fc .fc-button-primary:hover { background: var(--red-dark) !important; border-color: var(--red-dark) !important; }
+      }
+      .fc .fc-button-primary:not(:disabled):active { background: var(--red-dark) !important; border-color: var(--red-dark) !important; transform: scale(0.96); }
       .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--red-dark) !important; border-color: var(--red-dark) !important; }
 
       /* Checkout button */
       #checkout-btn {
         display: none; position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 50;
         background: var(--red); color: white;
-        border: none; border-radius: 10px; padding: 0.85rem 1.4rem;
+        border: none; border-radius: 10px; padding: 0.95rem 1.4rem;
         font-family: inherit; font-size: 0.95rem; font-weight: 700;
         cursor: pointer; box-shadow: 0 4px 16px rgba(200,16,46,.35);
         align-items: center; gap: 0.75rem;
-        transition: background 0.15s, transform 0.12s;
+        transition: background 0.1s, transform 0.1s;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
-      #checkout-btn:hover { background: var(--red-dark); transform: translateY(-2px); }
+      @media (hover: hover) {
+        #checkout-btn:hover { background: var(--red-dark); transform: translateY(-2px); }
+        #checkout-btn:disabled:hover { background: #9ca3af; transform: none; }
+      }
+      #checkout-btn:active:not(:disabled) { background: var(--red-dark); transform: scale(0.98); }
       #checkout-btn.visible { display: flex; }
+      #checkout-btn:disabled {
+        background: #9ca3af; cursor: not-allowed;
+        box-shadow: 0 4px 16px rgba(0,0,0,.15);
+      }
 
       /* Modal */
       .modal-overlay {
@@ -210,11 +239,21 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       .modal input.error-field { border-color: #dc2626; margin-bottom: 0.25rem; }
       .field-error { color: #dc2626; font-size: 0.8rem; margin-bottom: 0.75rem; display: none; }
       .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem; }
-      .btn { padding: 0.55rem 1.4rem; border-radius: 7px; border: none; cursor: pointer; font-size: 0.95rem; font-weight: 600; font-family: inherit; transition: background 0.15s; }
+      .btn {
+        padding: 0.65rem 1.4rem; border-radius: 7px; border: none; cursor: pointer;
+        font-size: 0.95rem; font-weight: 600; font-family: inherit;
+        transition: background 0.1s, transform 0.1s;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
       .btn-primary { background: var(--red); color: white; }
-      .btn-primary:hover { background: var(--red-dark); }
       .btn-secondary { background: #eee; color: #333; }
-      .btn-secondary:hover { background: #ddd; }
+      @media (hover: hover) {
+        .btn-primary:hover { background: var(--red-dark); }
+        .btn-secondary:hover { background: #ddd; }
+      }
+      .btn-primary:active { background: var(--red-dark); transform: scale(0.97); }
+      .btn-secondary:active { background: #c8c8c8; transform: scale(0.97); }
       .slot-info { background: #fff5f5; border-left: 3px solid var(--red); border-radius: 4px; padding: 0.5rem 0.75rem; margin-bottom: 1.25rem; font-size: 0.9rem; font-weight: 600; color: var(--red); }
       .error-msg { color: #dc2626; font-size: 0.85rem; margin-bottom: 0.5rem; }
       .success-msg { color: #16a34a; font-size: 1rem; text-align: center; margin-top: 0.5rem; font-weight: 600; }
@@ -258,12 +297,16 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         #calendar { padding: 0.75rem; }
         .modal { padding: 1.25rem; margin: 0.75rem; max-width: 100%; }
         .modal-actions { flex-direction: column-reverse; gap: 0.5rem; }
-        .modal-actions .btn { width: 100%; text-align: center; padding: 0.7rem; }
+        .modal-actions .btn { width: 100%; text-align: center; padding: 0.95rem; font-size: 1rem; min-height: 48px; }
+        .btn-maps { padding: 0.7rem 1.1rem; font-size: 0.95rem; min-height: 44px; }
         #checkout-btn {
           bottom: 1rem; right: 1rem; left: 1rem;
           width: calc(100% - 2rem);
           justify-content: center;
           border-radius: 12px;
+          padding: 1.05rem 1.4rem;
+          font-size: 1.05rem;
+          min-height: 54px;
         }
       }
     </style>
@@ -304,7 +347,7 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         .fc .fc-toolbar-title { font-size: 0.82rem !important; }
         .fc .fc-col-header-cell-cushion { font-size: 0.68rem !important; }
         .fc .fc-timegrid-slot-label-cushion { font-size: 0.62rem !important; }
-        .fc .fc-button { padding: 0.3rem 0.55rem !important; font-size: 0.78rem !important; }
+        .fc .fc-button { padding: 0.5rem 0.75rem !important; font-size: 0.85rem !important; min-height: 40px; }
         .fc .fc-toolbar { gap: 0.4rem; }
       }
     </style>
@@ -472,15 +515,34 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         });
       }
 
+      function hasAvailableAdjacent(): boolean {
+        if (!selStart || !selEnd) return false;
+        const beforeStart = new Date(selStart.getTime() - SLOT_MS);
+        const afterStart = selEnd;
+        return calendar.getEvents().some((ev) => {
+          if ((ev.extendedProps as { status: string }).status !== 'available') return false;
+          const t = ev.start!.getTime();
+          const sameDay = ev.start!.toDateString() === selStart!.toDateString();
+          return sameDay && (t === beforeStart.getTime() || t === afterStart.getTime());
+        });
+      }
+
       function updateCheckoutButton() {
-        const btn = document.getElementById('checkout-btn')!;
+        const btn = document.getElementById('checkout-btn')! as HTMLButtonElement;
         const info = document.getElementById('checkout-info')!;
         if (!selStart || !selEnd) {
           btn.classList.remove('visible');
           return;
         }
         const nSlots = Math.round((selEnd.getTime() - selStart.getTime()) / SLOT_MS);
-        info.textContent = `${nSlots} slot — €${nSlots * PRICE_PER_SLOT}`;
+        const tooShort = nSlots === 1 && hasAvailableAdjacent();
+        if (tooShort) {
+          info.textContent = 'Seleziona almeno 1 ora';
+          btn.disabled = true;
+        } else {
+          info.textContent = `${nSlots} slot — €${nSlots * PRICE_PER_SLOT}`;
+          btn.disabled = false;
+        }
         btn.classList.add('visible');
       }
 
@@ -524,7 +586,7 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         slotMinTime: '16:00:00',
         slotMaxTime: '23:00:00',
         allDaySlot: false,
-        height: 'auto',
+        height: 620,
         eventClassNames: (arg) => {
           const { status } = arg.event.extendedProps as { status: string };
           const inSel = selStart && selEnd && arg.event.start! >= selStart && arg.event.end! <= selEnd;

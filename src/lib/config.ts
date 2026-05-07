@@ -1,1 +1,1 @@
-export const MOCK_API = true;
+export const MOCK_API = import.meta.env.MOCK_API === 'true';

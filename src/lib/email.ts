@@ -60,7 +60,7 @@ export async function sendAdminNewBooking(booking: {
       <p><strong>Email:</strong> ${booking.email}</p>
       <p><strong>Telefono:</strong> ${booking.phone ?? 'Non fornito'}</p>
       <p><strong>Slot:</strong> ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}</p>
-      <p><strong>Durata:</strong> ${slots} × 30 min</p>
+      <p><strong>Durata:</strong> ${slots * 30} min</p>
       <p><strong>Totale:</strong> €${total}</p>
       <p><strong>ID prenotazione:</strong> <code>${booking.id}</code></p>
       <p>Vai alla <a href="${import.meta.env.SITE_URL ?? 'http://localhost:4321'}/admin">pagina admin</a> per approvare o rifiutare.</p>
@@ -91,7 +91,7 @@ export async function sendUserApproved(booking: {
       <h2>La tua prenotazione è stata approvata!</h2>
       <p>Ciao ${booking.name},</p>
       <p><strong>Orario:</strong> ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}</p>
-      <p><strong>Totale da pagare:</strong> €${total} (${slots} × €${price})</p>
+      <p><strong>Totale da pagare:</strong> €${total} (€${price} / 30 min)</p>
       <p>
         Completa la prenotazione effettuando il pagamento via PayPal:<br>
         <a href="${paypalLink}" style="background:#0070ba;color:white;padding:10px 20px;border-radius:4px;text-decoration:none;display:inline-block;margin-top:10px;">
@@ -101,6 +101,69 @@ export async function sendUserApproved(booking: {
       <p style="font-size:0.9em;color:#666;">
         Nella causale inserisci il tuo nome e il codice: <code>${booking.id.slice(0, 8)}</code>
       </p>
+      <p>A presto,<br>Basket Conselve</p>
+    `,
+  });
+}
+
+export async function sendUserConfirmed(booking: {
+  id: string;
+  name: string;
+  email: string;
+  slot_start: string;
+  slot_end: string;
+}) {
+  const transport = getTransport();
+
+  await transport.sendMail({
+    from: import.meta.env.GMAIL_USER,
+    to: booking.email,
+    subject: `BC Beach Volley — Pagamento confermato — ${formatDate(booking.slot_start)}`,
+    html: `
+      <h2>Pagamento ricevuto, prenotazione confermata!</h2>
+      <p>Ciao ${booking.name},</p>
+      <p>Abbiamo ricevuto il tuo pagamento. La prenotazione è confermata.</p>
+      <p><strong>Orario:</strong> ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}</p>
+      <p style="background:#fffbeb;border-left:3px solid #f59e0b;padding:0.6rem 0.9rem;font-size:0.95em;">
+        <strong>⚠️ Importante:</strong> Non sono disponibili le docce interne. È presente un doccino esterno per togliersi la sabbia.
+      </p>
+      <p>Ti aspettiamo in campo. Buon divertimento!</p>
+      <p style="font-size:0.9em;color:#666;">
+        Codice prenotazione: <code>${booking.id.slice(0, 8)}</code>
+      </p>
+      <p>A presto,<br>Basket Conselve</p>
+    `,
+  });
+}
+
+export async function sendUserRescheduled(booking: {
+  id: string;
+  name: string;
+  email: string;
+  slot_start: string;
+  slot_end: string;
+  old_slot_start: string;
+  old_slot_end: string;
+}) {
+  const transport = getTransport();
+
+  await transport.sendMail({
+    from: import.meta.env.GMAIL_USER,
+    to: booking.email,
+    subject: `BC Beach Volley — Orario aggiornato — ${formatDate(booking.slot_start)}`,
+    html: `
+      <h2>Il tuo orario è stato aggiornato</h2>
+      <p>Ciao ${booking.name},</p>
+      <p>L'orario della tua prenotazione è stato modificato:</p>
+      <p>
+        <strong>Vecchio orario:</strong> <s>${formatDateTime(booking.old_slot_start)} – ${formatTime(booking.old_slot_end)}</s><br />
+        <strong>Nuovo orario:</strong> ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}
+      </p>
+      <p>Lo stato della prenotazione e l'eventuale pagamento restano validi.</p>
+      <p style="font-size:0.9em;color:#666;">
+        Codice prenotazione: <code>${booking.id.slice(0, 8)}</code>
+      </p>
+      <p>Per qualsiasi necessità, rispondi a questa email.</p>
       <p>A presto,<br>Basket Conselve</p>
     `,
   });
