@@ -507,6 +507,8 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       let slotData: SlotData | null = null;
       let cacheStart: Date | null = null;
       let cacheEnd: Date | null = null;
+      let cacheTime: number | null = null;
+      const CACHE_TTL_MS = 5 * 60 * 1000;
 
       function localDateStr(d: Date): string {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -517,6 +519,7 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         slotData = await res.json();
         cacheStart = start;
         cacheEnd = end;
+        cacheTime = Date.now();
       }
 
       const STATUS_TO_DISPLAY: Record<string, string> = {
@@ -690,7 +693,8 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
           return { html: `<div style="width:100%;text-align:center;font-size:0.8rem;font-weight:600;padding:2px 0;">${icon}${time}</div>` };
         },
         events: async (info) => {
-          const needsFetch = !slotData ||
+          const cacheStale = !cacheTime || (Date.now() - cacheTime) > CACHE_TTL_MS;
+          const needsFetch = !slotData || cacheStale ||
             !cacheStart || !cacheEnd ||
             info.start < cacheStart || info.end > cacheEnd;
           if (needsFetch) {
@@ -753,6 +757,13 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       });
 
       calendar.render();
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && cacheTime && (Date.now() - cacheTime) > CACHE_TTL_MS) {
+          slotData = null;
+          calendar.refetchEvents();
+        }
+      });
 
       // Open modal from checkout button
       document.getElementById('checkout-btn')!.addEventListener('click', () => {
