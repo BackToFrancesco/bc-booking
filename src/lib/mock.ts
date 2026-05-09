@@ -1,16 +1,8 @@
-import { MOCK_SCHEDULE, SLOT_DURATION_MINUTES, buildSlotDateTimes } from './slots';
+import { MOCK_SCHEDULE, buildSlotDateTimes, type DaySchedule } from './slots';
 
-type DisplayState = 'available' | 'reserved' | 'booked' | 'blocked' | 'past';
+type MockState = 'reserved' | 'booked' | 'blocked';
 
-const colorMap: Record<DisplayState, string> = {
-  available: '#22c55e',
-  reserved:  '#eab308',
-  booked:    '#dc2626',
-  blocked:   '#374151',
-  past:      '#e2e2e2',
-};
-
-const MOCK_STATES: Record<number, { state: DisplayState; reason?: string }> = {
+const MOCK_STATES: Record<number, { state: MockState; reason?: string }> = {
   4:  { state: 'reserved' },
   6:  { state: 'booked' },   // gap test: 6 booked
   // 7 stays available — this is the "trapped" 30-min slot
@@ -20,39 +12,42 @@ const MOCK_STATES: Record<number, { state: DisplayState; reason?: string }> = {
   25: { state: 'reserved' },
 };
 
-export function getMockSlotEvents(from: string, to: string) {
+export type MockSlotData = {
+  schedule: DaySchedule[];
+  bookings: { slot_start: string; slot_end: string; status: string }[];
+  blocked: { slot_start: string; slot_end: string; reason: string | null }[];
+};
+
+export function getMockSlotData(from: string, to: string): MockSlotData {
   const fromDate = new Date(from);
   const toDate = new Date(to);
   toDate.setDate(toDate.getDate() + 1);
 
-  const now = new Date();
-  const events = [];
+  const bookings: MockSlotData['bookings'] = [];
+  const blocked: MockSlotData['blocked'] = [];
+
   let idx = 0;
   const cursor = new Date(fromDate);
-
   while (cursor < toDate) {
     const dateStr = cursor.toISOString().slice(0, 10);
     const slots = buildSlotDateTimes(dateStr, MOCK_SCHEDULE);
-
     for (const { start, end } of slots) {
       const mock = MOCK_STATES[idx];
-      let displayState: DisplayState;
-      if (start < now) displayState = 'past';
-      else displayState = mock?.state ?? 'available';
-
-      events.push({
-        id: start.toISOString(),
-        title: '',
-        start: start.toISOString(),
-        end: end.toISOString(),
-        backgroundColor: colorMap[displayState],
-        borderColor: colorMap[displayState],
-        extendedProps: { status: displayState, reason: mock?.reason ?? null },
-      });
+      if (mock) {
+        const slot_start = start.toISOString();
+        const slot_end = end.toISOString();
+        if (mock.state === 'reserved') {
+          bookings.push({ slot_start, slot_end, status: 'pending' });
+        } else if (mock.state === 'booked') {
+          bookings.push({ slot_start, slot_end, status: 'confirmed' });
+        } else if (mock.state === 'blocked') {
+          blocked.push({ slot_start, slot_end, reason: mock.reason ?? null });
+        }
+      }
       idx++;
     }
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  return events;
+  return { schedule: MOCK_SCHEDULE, bookings, blocked };
 }

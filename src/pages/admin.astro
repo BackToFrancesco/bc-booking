@@ -55,6 +55,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       :root { --red: #C8102E; --red-dark: #a00e25; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: 'Inter', system-ui, sans-serif; background: #f0f0f0; color: #1a1a1a; }
+      body.modal-open { overflow: hidden; }
       header { background: var(--red); color: white; padding: 0.6rem 2rem; display: flex; justify-content: space-between; align-items: center; }
       .header-left { display: flex; align-items: center; gap: 0.75rem; }
       .header-logo { height: 36px; width: auto; display: block; }
@@ -150,7 +151,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       /* Detail modal */
       .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 100; align-items: center; justify-content: center; }
       .modal-overlay.open { display: flex; }
-      .modal { background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 460px; box-shadow: 0 8px 32px rgba(0,0,0,.18); }
+      .modal { background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 460px; box-shadow: 0 8px 32px rgba(0,0,0,.18); max-height: calc(100dvh - 3rem); overflow-y: auto; }
       .modal-header { border-bottom: 3px solid var(--red); padding-bottom: 0.75rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; }
       .modal-header h2 { font-size: 1.2rem; font-weight: 800; color: var(--red); }
       .modal-close {
@@ -241,8 +242,8 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         }
 
         /* Modals */
-        .modal { margin: 0.75rem; padding: 1.25rem; max-width: 100%; }
-        .modal-actions { flex-direction: column-reverse; }
+        .modal { margin: 0.75rem; padding: 1.25rem; max-width: calc(100% - 1.5rem); max-height: calc(100dvh - 1.5rem); }
+        .modal-actions { flex-direction: column; }
         .modal-actions .btn { width: 100%; text-align: center; padding: 0.9rem; font-size: 0.95rem; min-height: 48px; }
         .modal dl { grid-template-columns: 1fr; gap: 0.15rem; }
         .modal dt { padding-top: 0.6rem; }
@@ -461,6 +462,14 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
 
         <div id="detail-error" class="error-msg" style="display:none"></div>
 
+        <div id="detail-confirm-delete" style="display:none; margin-top:1.25rem; padding-top:1rem; border-top:1px solid #f0f0f0">
+          <p style="font-size:0.95rem; font-weight:600; margin-bottom:0.85rem" id="detail-confirm-text">Cancellare questa prenotazione?</p>
+          <div class="modal-actions" style="margin-top:0; padding-top:0; border-top:none">
+            <button class="btn btn-danger" id="detail-confirm-yes">Sì, cancella</button>
+            <button class="btn btn-secondary" id="detail-confirm-no">No</button>
+          </div>
+        </div>
+
         <div class="modal-actions" id="detail-actions"></div>
         <div class="modal-actions detail-edit-row" id="detail-edit-actions" style="display:none">
           <div>
@@ -500,6 +509,15 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       import interactionPlugin from '@fullcalendar/interaction';
 
       // ── Pending bookings table actions ──────────────────────────────────
+      function openModal(id: string) {
+        document.getElementById(id)!.classList.add('open');
+        document.body.classList.add('modal-open');
+      }
+      function closeModal(id: string) {
+        document.getElementById(id)!.classList.remove('open');
+        document.body.classList.remove('modal-open');
+      }
+
       async function apiPost(url: string) {
         const res = await fetch(url, { method: 'POST' });
         if (res.ok) window.location.reload();
@@ -549,15 +567,11 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         blockStart = start; blockEnd = end;
         document.getElementById('block-range-label')!.textContent = fmtRange(start, end);
         (document.getElementById('block-reason') as HTMLInputElement).value = '';
-        document.getElementById('block-modal')!.classList.add('open');
+        openModal('block-modal');
       }
 
-      document.getElementById('block-close')!.addEventListener('click', () =>
-        document.getElementById('block-modal')!.classList.remove('open')
-      );
-      document.getElementById('block-cancel-btn')!.addEventListener('click', () =>
-        document.getElementById('block-modal')!.classList.remove('open')
-      );
+      document.getElementById('block-close')!.addEventListener('click', () => closeModal('block-modal'));
+      document.getElementById('block-cancel-btn')!.addEventListener('click', () => closeModal('block-modal'));
 
       document.getElementById('block-confirm-btn')!.addEventListener('click', async () => {
         if (!blockStart || !blockEnd) return;
@@ -567,7 +581,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ slot_start: blockStart.toISOString(), slot_end: blockEnd.toISOString(), reason }),
         });
-        document.getElementById('block-modal')!.classList.remove('open');
+        closeModal('block-modal');
         if (res.ok) adminCalendar.refetchEvents();
         else alert('Errore blocco slot');
       });
@@ -705,7 +719,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
             actions.appendChild(confirmBtn);
           }
 
-          // Modifica button (always available)
+          // Modifica button
           const editBtn = document.createElement('button');
           editBtn.className = 'btn btn-secondary'; editBtn.textContent = 'Modifica';
           editBtn.onclick = () => setEditMode(true);
@@ -713,16 +727,27 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
 
           // Cancel booking (only future)
           if (start > new Date()) {
+            const confirmPanel = document.getElementById('detail-confirm-delete')!;
             const cancelBtn = document.createElement('button');
             cancelBtn.className = 'btn btn-danger'; cancelBtn.textContent = 'Cancella prenotazione';
-            cancelBtn.onclick = async () => {
-              if (!confirm(`Cancellare la prenotazione di ${name}?`)) return;
-              const res = await fetch(`/api/admin/bookings/${bookingId}`, { method: 'DELETE' });
-              document.getElementById('detail-modal')!.classList.remove('open');
-              if (res.ok) adminCalendar.refetchEvents();
-              else alert('Errore cancellazione');
+            cancelBtn.onclick = () => {
+              document.getElementById('detail-confirm-text')!.textContent = `Cancellare la prenotazione di ${name}?`;
+              actions.style.display = 'none';
+              confirmPanel.style.display = '';
             };
             actions.appendChild(cancelBtn);
+
+            document.getElementById('detail-confirm-no')!.onclick = () => {
+              confirmPanel.style.display = 'none';
+              actions.style.display = 'flex';
+            };
+            document.getElementById('detail-confirm-yes')!.onclick = async () => {
+              const res = await fetch(`/api/admin/bookings/${bookingId}`, { method: 'DELETE' });
+              confirmPanel.style.display = 'none';
+              closeModal('detail-modal');
+              if (res.ok) window.location.reload();
+              else alert('Errore cancellazione');
+            };
           }
         } else {
           title.textContent = 'Dettagli blocco';
@@ -737,13 +762,13 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
           unblockBtn.className = 'btn btn-secondary'; unblockBtn.textContent = 'Sblocca';
           unblockBtn.onclick = async () => {
             const res = await fetch(`/api/admin/blocked-slots/${bookingId}`, { method: 'DELETE' });
-            document.getElementById('detail-modal')!.classList.remove('open');
+            closeModal('detail-modal');
             if (res.ok) adminCalendar.refetchEvents();
           };
           actions.appendChild(unblockBtn);
         }
 
-        document.getElementById('detail-modal')!.classList.add('open');
+        openModal('detail-modal');
       }
 
       // Live-update summary while editing
@@ -784,17 +809,6 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
           return;
         }
 
-        // Confirm destructive transitions
-        const destructive =
-          (detail.originalStatus === 'confirmed' && newStatus === 'rejected') ||
-          (detail.originalStatus === 'approved' && newStatus === 'rejected') ||
-          (detail.originalStatus === 'confirmed' && newStatus === 'pending') ||
-          (detail.originalStatus === 'confirmed' && newStatus === 'approved');
-        if (destructive) {
-          if (!confirm(`Stai cambiando lo stato da "${detail.originalStatus}" a "${newStatus}". Continuare?`)) {
-            return;
-          }
-        }
 
         const notify = (document.getElementById('detail-notify') as HTMLInputElement).checked;
         const body: Record<string, unknown> = { notify };
@@ -816,8 +830,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         saveBtn.disabled = false; saveBtn.textContent = 'Salva';
 
         if (res.ok) {
-          document.getElementById('detail-modal')!.classList.remove('open');
-          adminCalendar.refetchEvents();
+          window.location.reload();
         } else {
           const data = await res.json().catch(() => ({}));
           errEl.textContent = data.error ?? 'Errore durante il salvataggio.';
@@ -825,9 +838,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         }
       });
 
-      document.getElementById('detail-close')!.addEventListener('click', () =>
-        document.getElementById('detail-modal')!.classList.remove('open')
-      );
+      document.getElementById('detail-close')!.addEventListener('click', () => closeModal('detail-modal'));
 
       // ── Admin Calendar ────────────────────────────────────────────────────
       const isMobile = () => window.innerWidth < 640;

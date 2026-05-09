@@ -1,7 +1,8 @@
 import type { APIRoute } from 'astro';
+import { waitUntil } from '@vercel/functions';
 import sql from '../../../lib/db';
 import { sendAdminNewBooking } from '../../../lib/email';
-import { MOCK_API } from '../../../lib/config';
+import { MOCK_API, BOOKING_HORIZON_MS } from '../../../lib/config';
 
 export const POST: APIRoute = async ({ request }) => {
   let body: { name?: string; email?: string; phone?: string; slot_start?: string; slot_end?: string };
@@ -23,8 +24,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-  if (!name || !email || !slot_start || !slot_end) {
-    return new Response(JSON.stringify({ error: 'name, email, slot_start and slot_end are required' }), { status: 400 });
+  if (!name || !email || !phone || !slot_start || !slot_end) {
+    return new Response(JSON.stringify({ error: 'name, email, phone, slot_start and slot_end are required' }), { status: 400 });
   }
   if (!EMAIL_RE.test(email)) {
     return new Response(JSON.stringify({ error: 'Invalid email format' }), { status: 400 });
@@ -37,6 +38,12 @@ export const POST: APIRoute = async ({ request }) => {
   const end = new Date(slot_end);
   if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
     return new Response(JSON.stringify({ error: 'Invalid slot range' }), { status: 400 });
+  }
+  if (start <= new Date()) {
+    return new Response(JSON.stringify({ error: 'Cannot book a slot in the past' }), { status: 400 });
+  }
+  if (start.getTime() > Date.now() + BOOKING_HORIZON_MS) {
+    return new Response(JSON.stringify({ error: 'Slot oltre il limite di prenotazione consentito' }), { status: 400 });
   }
 
   // Check overlap with existing bookings
@@ -66,7 +73,10 @@ export const POST: APIRoute = async ({ request }) => {
     RETURNING id, name, email, phone, slot_start, slot_end, status
   `;
 
-  await sendAdminNewBooking(booking as { id: string; name: string; email: string; phone?: string; slot_start: string; slot_end: string });
+  waitUntil(
+    sendAdminNewBooking(booking as { id: string; name: string; email: string; phone?: string; slot_start: string; slot_end: string })
+      .catch((err) => console.error('sendAdminNewBooking failed:', err)),
+  );
 
   return new Response(JSON.stringify({ ok: true, id: booking.id }), {
     status: 201,

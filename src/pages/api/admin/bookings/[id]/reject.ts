@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { waitUntil } from '@vercel/functions';
 import sql from '../../../../../lib/db';
 import { sendUserRejected } from '../../../../../lib/email';
 import { MOCK_API } from '../../../../../lib/config';
@@ -18,7 +19,10 @@ export const POST: APIRoute = async ({ params }) => {
     return new Response(JSON.stringify({ error: 'Booking not found or not pending' }), { status: 404 });
   }
 
-  await sendUserRejected(booking as { id: string; name: string; email: string; slot_start: string; slot_end: string });
+  waitUntil(
+    sendUserRejected(booking as { id: string; name: string; email: string; slot_start: string; slot_end: string })
+      .catch((err) => console.error('sendUserRejected failed:', err)),
+  );
 
   return new Response(JSON.stringify({ ok: true }), { status: 200 });
 };

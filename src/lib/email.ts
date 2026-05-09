@@ -63,7 +63,7 @@ export async function sendAdminNewBooking(booking: {
       <p><strong>Durata:</strong> ${slots * 30} min</p>
       <p><strong>Totale:</strong> €${total}</p>
       <p><strong>ID prenotazione:</strong> <code>${booking.id}</code></p>
-      <p>Vai alla <a href="${import.meta.env.SITE_URL ?? 'http://localhost:4321'}/admin">pagina admin</a> per approvare o rifiutare.</p>
+      <p>Vai alla <a href="${import.meta.env.SITE_URL ?? 'https://bc-booking.vercel.app/admin'}/admin">pagina admin</a> per approvare o rifiutare.</p>
     `,
   });
 }
@@ -81,7 +81,7 @@ export async function sendUserApproved(booking: {
   const total = slots * price;
   const handle = import.meta.env.PAYPAL_ME_HANDLE;
   if (!handle) throw new Error('PAYPAL_ME_HANDLE env var is required');
-  const paypalLink = `https://www.paypal.me/${handle}/${total}`;
+  const paypalLink = `https://www.paypal.me/${handle}`;
 
   await transport.sendMail({
     from: import.meta.env.GMAIL_USER,
@@ -92,14 +92,15 @@ export async function sendUserApproved(booking: {
       <p>Ciao ${booking.name},</p>
       <p><strong>Orario:</strong> ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}</p>
       <p><strong>Totale da pagare:</strong> €${total} (€${price} / 30 min)</p>
-      <p>
-        Completa la prenotazione effettuando il pagamento via PayPal:<br>
-        <a href="${paypalLink}" style="background:#0070ba;color:white;padding:10px 20px;border-radius:4px;text-decoration:none;display:inline-block;margin-top:10px;">
-          Paga €${total} con PayPal
-        </a>
+      <p style="background:#fff3cd;border-left:4px solid #f59e0b;padding:0.7rem 1rem;border-radius:4px;margin-bottom:0.75rem;">
+        ⚠️ <strong>Importante:</strong> nella causale del pagamento inserisci il tuo nome e il codice <strong>${booking.id.slice(0, 8)}</strong>
       </p>
-      <p style="font-size:0.9em;color:#666;">
-        Nella causale inserisci il tuo nome e il codice: <code>${booking.id.slice(0, 8)}</code>
+      <p>
+        Completa la prenotazione inviando <strong>€${total}</strong> via PayPal a
+        <a href="${paypalLink}">paypal.me/${handle}</a> — inserisci tu l'importo e la causale con nome e codice.<br>
+        <a href="${paypalLink}" style="background:#0070ba;color:white;padding:10px 20px;border-radius:4px;text-decoration:none;display:inline-block;margin-top:10px;">
+          Paga con PayPal
+        </a>
       </p>
       <p>A presto,<br>Basket Conselve</p>
     `,

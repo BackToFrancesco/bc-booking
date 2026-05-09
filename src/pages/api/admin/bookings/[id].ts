@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { waitUntil } from '@vercel/functions';
 import sql from '../../../../lib/db';
 import {
   sendUserApproved,
@@ -135,16 +136,22 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
     if (statusChanged) {
       // Status email already includes the (possibly updated) slot times via formatDateTime in the template.
-      if (status === 'approved') await sendUserApproved(payload);
-      else if (status === 'confirmed') await sendUserConfirmed(payload);
-      else if (status === 'rejected') await sendUserRejected(payload);
+      let emailPromise: Promise<void> | null = null;
+      if (status === 'approved') emailPromise = sendUserApproved(payload);
+      else if (status === 'confirmed') emailPromise = sendUserConfirmed(payload);
+      else if (status === 'rejected') emailPromise = sendUserRejected(payload);
       // 'pending' has no template — silent
+      if (emailPromise) {
+        waitUntil(emailPromise.catch((err) => console.error('status email failed:', err)));
+      }
     } else if (timeChanged) {
-      await sendUserRescheduled({
-        ...payload,
-        old_slot_start: new Date(existing.slot_start).toISOString(),
-        old_slot_end: new Date(existing.slot_end).toISOString(),
-      });
+      waitUntil(
+        sendUserRescheduled({
+          ...payload,
+          old_slot_start: new Date(existing.slot_start).toISOString(),
+          old_slot_end: new Date(existing.slot_end).toISOString(),
+        }).catch((err) => console.error('sendUserRescheduled failed:', err)),
+      );
     }
   }
 

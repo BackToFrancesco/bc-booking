@@ -422,10 +422,10 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
     </div>
 
     <footer>
-      <div class="footer-line"><a href="mailto:basketconselve@gmail.com">basketconselve@gmail.com</a></div>
+      <div class="footer-line"><a href="mailto:basketconselveprenotazioni@gmail.com">basketconselveprenotazioni@gmail.com</a></div>
       <div class="footer-phones">
+        <a href="tel:+393423022007">342 3022007</a>
         <a href="tel:+393387719505">338 7719505</a>
-        <a href="tel:+393393561267">339 3561267</a>
       </div>
       <div class="footer-address">Via L. Traverso 6, Conselve 35026, PD</div>
       <div class="footer-social">
@@ -467,8 +467,8 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
           <input id="inp-email-confirm" type="email" required />
           <div class="field-error" id="email-confirm-error">Le email non corrispondono.</div>
 
-          <label for="inp-phone">Telefono</label>
-          <input id="inp-phone" type="tel" placeholder="333 123 4567" />
+          <label for="inp-phone">Telefono *</label>
+          <input id="inp-phone" type="tel" placeholder="333 123 4567" required />
 
           <div class="modal-actions">
             <button class="btn btn-secondary" id="modal-cancel">Annulla</button>
@@ -488,6 +488,8 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       import intlTelInput from 'intl-tel-input';
       import 'intl-tel-input/dist/css/intlTelInput.css';
 
+      import { BOOKING_HORIZON_MS } from '../lib/config';
+
       const PRICE_PER_SLOT = Number((document.getElementById('checkout-btn') as HTMLElement).dataset.price ?? 10);
       const SLOT_MS = 30 * 60 * 1000;
       const SEL_COLOR = '#1d4ed8';
@@ -495,6 +497,90 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
 
       let selStart: Date | null = null;
       let selEnd: Date | null = null;   // exclusive end of last selected slot
+
+      // ── Slot data cache (single fetch, frontend-generated events) ────────
+      type SlotData = {
+        schedule: { day_of_week: number; open_hour: number; close_hour: number }[];
+        bookings: { slot_start: string; slot_end: string; status: string }[];
+        blocked: { slot_start: string; slot_end: string; reason: string | null }[];
+      };
+      let slotData: SlotData | null = null;
+      let cacheStart: Date | null = null;
+      let cacheEnd: Date | null = null;
+
+      function localDateStr(d: Date): string {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      }
+
+      async function fetchSlotData(start: Date, end: Date): Promise<void> {
+        const res = await fetch(`/api/slots?from=${localDateStr(start)}&to=${localDateStr(end)}`);
+        slotData = await res.json();
+        cacheStart = start;
+        cacheEnd = end;
+      }
+
+      const STATUS_TO_DISPLAY: Record<string, string> = {
+        pending: 'reserved',
+        approved: 'reserved',
+        confirmed: 'booked',
+      };
+      const COLOR_MAP: Record<string, string> = {
+        available: '#22c55e',
+        reserved:  '#eab308',
+        booked:    '#dc2626',
+        blocked:   '#374151',
+        past:      '#e2e2e2',
+      };
+
+      function buildEvents(rangeStart: Date, rangeEnd: Date): any[] {
+        if (!slotData) return [];
+        const now = new Date();
+        const events: any[] = [];
+
+        const cursor = new Date(rangeStart);
+        cursor.setHours(0, 0, 0, 0);
+        while (cursor < rangeEnd) {
+          const dow = cursor.getDay();
+          const day = slotData.schedule.find((s) => s.day_of_week === dow);
+          if (day) {
+            const dateStr = localDateStr(cursor);
+            for (let h = day.open_hour; h < day.close_hour; h++) {
+              for (const m of [0, 30]) {
+                const start = new Date(`${dateStr}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
+                const end = new Date(start.getTime() + SLOT_MS);
+                let status = 'available';
+                let reason: string | null = null;
+                if (start < now) {
+                  status = 'past';
+                } else {
+                  const block = slotData.blocked.find((b) =>
+                    new Date(b.slot_start) < end && new Date(b.slot_end) > start
+                  );
+                  if (block) {
+                    status = 'blocked';
+                    reason = block.reason;
+                  } else {
+                    const booking = slotData.bookings.find((b) =>
+                      new Date(b.slot_start) < end && new Date(b.slot_end) > start
+                    );
+                    if (booking) status = STATUS_TO_DISPLAY[booking.status] ?? 'available';
+                  }
+                }
+                events.push({
+                  id: start.toISOString(),
+                  start: start.toISOString(),
+                  end: end.toISOString(),
+                  backgroundColor: COLOR_MAP[status],
+                  borderColor: COLOR_MAP[status],
+                  extendedProps: { status, reason },
+                });
+              }
+            }
+          }
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        return events;
+      }
 
       const iti = intlTelInput(document.getElementById('inp-phone') as HTMLInputElement, {
         initialCountry: 'it',
@@ -581,7 +667,10 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         },
         headerToolbar: { left: 'title', center: '', right: 'thisWeek prev,next' },
         nowIndicator: true,
-        validRange: { start: new Date() },
+        validRange: {
+          start: new Date(),
+          end: new Date(Date.now() + BOOKING_HORIZON_MS),
+        },
         slotDuration: '00:30:00',
         slotMinTime: '16:00:00',
         slotMaxTime: '23:00:00',
@@ -601,10 +690,21 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
           return { html: `<div style="width:100%;text-align:center;font-size:0.8rem;font-weight:600;padding:2px 0;">${icon}${time}</div>` };
         },
         events: async (info) => {
-          const from = info.startStr.slice(0, 10);
-          const to = info.endStr.slice(0, 10);
-          const res = await fetch(`/api/slots?from=${from}&to=${to}`);
-          return res.json();
+          const needsFetch = !slotData ||
+            !cacheStart || !cacheEnd ||
+            info.start < cacheStart || info.end > cacheEnd;
+          if (needsFetch) {
+            // Fetch the entire booking horizon once: prev/next inside this range are zero-fetch
+            const start = (cacheStart && info.start > cacheStart) ? cacheStart : info.start;
+            const horizonEnd = new Date(start.getTime() + BOOKING_HORIZON_MS);
+            const end = new Date(Math.max(
+              info.end.getTime(),
+              cacheEnd?.getTime() ?? 0,
+              horizonEnd.getTime()
+            ));
+            await fetchSlotData(start, end);
+          }
+          return buildEvents(info.start, info.end);
         },
         eventClick: (info) => {
           const ev = info.event;
@@ -720,6 +820,7 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
 
         if (!name) { errEl.textContent = 'Il nome è obbligatorio.'; errEl.style.display = 'block'; return; }
         if (!email || !EMAIL_RE.test(email)) { errEl.textContent = "Inserisci un'email valida."; errEl.style.display = 'block'; return; }
+        if (!phone) { errEl.textContent = 'Il numero di telefono è obbligatorio.'; errEl.style.display = 'block'; return; }
         if (email !== emailConfirm) {
           errEl.textContent = 'Le email non corrispondono.'; errEl.style.display = 'block';
           (document.getElementById('inp-email-confirm') as HTMLInputElement).classList.add('error-field');
@@ -748,6 +849,7 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
           document.getElementById('modal-form')!.style.display = 'none';
           document.getElementById('modal-success')!.style.display = 'block';
           clearSelection();
+          slotData = null;
           calendar.refetchEvents();
         } else {
           const data = await res.json();
