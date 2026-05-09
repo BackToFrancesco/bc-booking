@@ -63,7 +63,7 @@ export async function sendAdminNewBooking(booking: {
       <p><strong>Durata:</strong> ${slots * 30} min</p>
       <p><strong>Totale:</strong> €${total}</p>
       <p><strong>ID prenotazione:</strong> <code>${booking.id}</code></p>
-      <p>Vai alla <a href="${import.meta.env.SITE_URL ?? 'https://bc-booking.vercel.app/admin'}/admin">pagina admin</a> per approvare o rifiutare.</p>
+      <p>Vai alla <a href="${import.meta.env.SITE_URL ?? 'https://bc-booking.vercel.app'}/admin">pagina admin</a> per approvare o rifiutare.</p>
     `,
   });
 }
