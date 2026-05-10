@@ -134,6 +134,9 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       .schedule-table td { padding: 0.6rem 1rem; font-size: 0.88rem; }
       .schedule-table select { padding: 0.35rem 0.5rem; border: 1.5px solid #ddd; border-radius: 5px; font-family: inherit; font-size: 0.88rem; background: white; }
       .schedule-table select:focus { outline: none; border-color: var(--red); }
+      .schedule-table tr.row-invalid select { border-color: #dc2626; background: #fef2f2; }
+      .schedule-error { color: #dc2626; font-size: 0.85rem; padding: 0 1rem 0.5rem; display: none; }
+      .schedule-error.visible { display: block; }
       .btn-save {
         background: var(--red); color: white; border: none; border-radius: 6px;
         padding: 0.7rem 1.6rem; font-size: 0.95rem; font-weight: 700;
@@ -423,6 +426,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
             ))}
           </tbody>
         </table>
+        <div class="schedule-error" id="schedule-error"></div>
         <button class="btn-save" id="save-schedule">Salva orari</button>
       </div>
     </div>
@@ -642,8 +646,17 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
           newEnd.getTime() !== detail.originalEnd.getTime();
         const hasChanges = statusChanged || timeChanged;
 
-        (document.getElementById('detail-save') as HTMLButtonElement).disabled = !hasChanges;
-        (document.getElementById('detail-notify') as HTMLInputElement).disabled = !hasChanges;
+        const errEl = document.getElementById('detail-error')!;
+        const invalidRange = timeChanged && newEnd <= newStart;
+        if (invalidRange) {
+          errEl.textContent = 'L\'orario di fine deve essere successivo a quello di inizio.';
+          errEl.style.display = 'block';
+        } else {
+          errEl.style.display = 'none';
+        }
+
+        (document.getElementById('detail-save') as HTMLButtonElement).disabled = !hasChanges || invalidRange;
+        (document.getElementById('detail-notify') as HTMLInputElement).disabled = !hasChanges || invalidRange;
 
         const helpEl = document.getElementById('detail-notify-help')!;
         if (!hasChanges) {
@@ -898,8 +911,45 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
 
       adminCalendar.render();
 
+      // ── Schedule validation ───────────────────────────────────────────────
+      const DAY_NAMES_LIVE = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+      const scheduleErrEl = document.getElementById('schedule-error')!;
+      const saveScheduleBtn = document.getElementById('save-schedule') as HTMLButtonElement;
+
+      function validateSchedule(): boolean {
+        const rows = document.querySelectorAll('#schedule-table tbody tr[data-dow]');
+        const invalidDays: string[] = [];
+        rows.forEach((row) => {
+          const dow = Number((row as HTMLElement).dataset.dow);
+          const open = Number((row.querySelector('.open-hour') as HTMLSelectElement).value);
+          const close = Number((row.querySelector('.close-hour') as HTMLSelectElement).value);
+          if (open >= close) {
+            row.classList.add('row-invalid');
+            invalidDays.push(DAY_NAMES_LIVE[dow]);
+          } else {
+            row.classList.remove('row-invalid');
+          }
+        });
+        if (invalidDays.length > 0) {
+          scheduleErrEl.textContent = `L'apertura deve essere precedente alla chiusura — controlla: ${invalidDays.join(', ')}.`;
+          scheduleErrEl.classList.add('visible');
+          saveScheduleBtn.disabled = true;
+          return false;
+        }
+        scheduleErrEl.classList.remove('visible');
+        saveScheduleBtn.disabled = false;
+        return true;
+      }
+
+      document.querySelectorAll('#schedule-table .open-hour, #schedule-table .close-hour').forEach((sel) => {
+        sel.addEventListener('change', validateSchedule);
+      });
+      validateSchedule();
+
       // ── Schedule save ─────────────────────────────────────────────────────
       document.getElementById('save-schedule')!.addEventListener('click', async () => {
+        if (!validateSchedule()) return;
+
         const rows = document.querySelectorAll('#schedule-table tbody tr[data-dow]');
         const schedules = Array.from(rows).map((row) => {
           const dow = Number((row as HTMLElement).dataset.dow);

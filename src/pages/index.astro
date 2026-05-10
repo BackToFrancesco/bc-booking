@@ -723,8 +723,15 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
           const slotEnd = ev.end!;
 
           if (!selStart || !selEnd) {
+            // Auto-select 2 slots (1 hour) if the next slot is available and same day
+            const nextStart = slotEnd;
+            const nextEnd = new Date(slotEnd.getTime() + SLOT_MS);
+            const sameDay = nextStart.toISOString().slice(0, 10) === slotStart.toISOString().slice(0, 10);
+            const nextAvailable = sameDay && calendar.getEvents().some(
+              (e) => e.start!.getTime() === nextStart.getTime() && e.extendedProps.status === 'available'
+            );
             selStart = slotStart;
-            selEnd = slotEnd;
+            selEnd = nextAvailable ? nextEnd : slotEnd;
           } else if (slotStart.getTime() === selEnd.getTime() && slotStart.toDateString() === selStart.toDateString()) {
             // Adjacent at end, same day → extend
             selEnd = slotEnd;
@@ -746,9 +753,15 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
               selStart = slotEnd;
             }
           } else {
-            // Non-adjacent or different day → reset and start new selection
+            // Non-adjacent or different day → reset and start new selection (auto-select 2)
+            const nextStart2 = slotEnd;
+            const nextEnd2 = new Date(slotEnd.getTime() + SLOT_MS);
+            const sameDay2 = nextStart2.toDateString() === slotStart.toDateString();
+            const nextAvailable2 = sameDay2 && calendar.getEvents().some(
+              (e) => e.start!.getTime() === nextStart2.getTime() && e.extendedProps.status === 'available'
+            );
             selStart = slotStart;
-            selEnd = slotEnd;
+            selEnd = nextAvailable2 ? nextEnd2 : slotEnd;
           }
 
           updateEventColors();

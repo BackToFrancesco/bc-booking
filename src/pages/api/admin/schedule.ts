@@ -26,6 +26,21 @@ export const PUT: APIRoute = async ({ request }) => {
   }
 
   for (const s of schedules) {
+    if (
+      !Number.isInteger(s.day_of_week) || s.day_of_week < 0 || s.day_of_week > 6 ||
+      !Number.isInteger(s.open_hour) || s.open_hour < 0 || s.open_hour > 23 ||
+      !Number.isInteger(s.close_hour) || s.close_hour < 0 || s.close_hour > 23
+    ) {
+      return new Response(JSON.stringify({ error: 'Valori orario fuori range (0-23)' }), { status: 400 });
+    }
+    if (s.open_hour >= s.close_hour) {
+      return new Response(JSON.stringify({
+        error: `L'apertura deve essere precedente alla chiusura (giorno ${s.day_of_week})`,
+      }), { status: 400 });
+    }
+  }
+
+  for (const s of schedules) {
     await sql`
       INSERT INTO day_schedules (day_of_week, open_hour, close_hour)
       VALUES (${s.day_of_week}, ${s.open_hour}, ${s.close_hour})
