@@ -134,6 +134,41 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         .info-row { grid-template-columns: 1fr; }
       }
 
+      .contact-box {
+        background: white;
+        border-left: 4px solid var(--red);
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        color: #444;
+        margin-top: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .contact-box strong { color: #1a1a1a; }
+      .btn-whatsapp {
+        background: #25d366; color: white;
+        padding: 0.6rem 1.1rem; border-radius: 6px;
+        text-decoration: none; font-size: 0.9rem; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        transition: background 0.1s, transform 0.1s;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        white-space: nowrap;
+      }
+      @media (hover: hover) {
+        .btn-whatsapp:hover { background: #1da851; }
+      }
+      .btn-whatsapp:active { background: #1da851; transform: scale(0.96); }
+      @media (max-width: 640px) {
+        .contact-box { flex-direction: column; align-items: stretch; }
+        .btn-whatsapp { width: 100%; justify-content: center; padding: 0.85rem; min-height: 44px; }
+      }
+
       .steps {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -223,14 +258,19 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       .modal-overlay {
         display: none; position: fixed; inset: 0;
         background: rgba(0,0,0,.55); z-index: 100;
-        align-items: center; justify-content: center;
+        align-items: flex-start; justify-content: center;
+        overflow-y: auto;
+        padding: 1rem;
+        -webkit-overflow-scrolling: touch;
       }
       .modal-overlay.open { display: flex; }
       .modal {
         background: white; border-radius: 12px; padding: 2rem;
         width: 100%; max-width: 440px; position: relative;
         box-shadow: 0 8px 32px rgba(0,0,0,.18);
+        margin: auto 0;
       }
+      body.modal-open { overflow: hidden; }
       .modal-header { border-bottom: 3px solid var(--red); padding-bottom: 0.75rem; margin-bottom: 1.25rem; }
       .modal-header h2 { font-size: 1.3rem; font-weight: 800; color: var(--red); }
       .modal label { display: block; margin-bottom: 0.3rem; font-size: 0.85rem; font-weight: 600; color: #444; text-transform: uppercase; letter-spacing: 0.03em; }
@@ -256,7 +296,18 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       .btn-secondary:active { background: #c8c8c8; transform: scale(0.97); }
       .slot-info { background: #fff5f5; border-left: 3px solid var(--red); border-radius: 4px; padding: 0.5rem 0.75rem; margin-bottom: 1.25rem; font-size: 0.9rem; font-weight: 600; color: var(--red); }
       .error-msg { color: #dc2626; font-size: 0.85rem; margin-bottom: 0.5rem; }
-      .success-msg { color: #16a34a; font-size: 1rem; text-align: center; margin-top: 0.5rem; font-weight: 600; }
+      .success-msg { color: #1a1a1a; font-size: 0.95rem; line-height: 1.55; margin-top: 0.5rem; }
+      .success-msg h3 { font-size: 1.15rem; font-weight: 800; color: #16a34a; margin-bottom: 0.75rem; }
+      .success-msg p { margin-bottom: 0.7rem; }
+      .success-msg p:last-of-type { margin-bottom: 1rem; }
+      .success-msg .spam-note {
+        background: #fff3cd; border-left: 3px solid #f59e0b;
+        padding: 0.6rem 0.85rem; border-radius: 4px;
+        font-size: 0.9rem;
+      }
+      .success-msg .ok-btn {
+        width: 100%; margin-top: 0.5rem;
+      }
       .iti { width: 100%; margin-bottom: 1rem; display: block; }
       .iti__tel-input { width: 100%; }
 
@@ -419,6 +470,19 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         <div class="legend-item"><div class="dot" style="background:#374151"></div> Bloccato</div>
       </div>
       <div id="calendar"></div>
+
+      <div class="contact-box">
+        <div>
+          <strong>Hai dubbi o domande?</strong><br />
+          Per qualsiasi necessità, scrivi su WhatsApp a Matteo Sturaro (+39 342 302 2007).
+        </div>
+        <a class="btn-whatsapp" href="https://wa.me/393423022007" target="_blank" rel="noopener" aria-label="Apri WhatsApp">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+          </svg>
+          Scrivi su WhatsApp
+        </a>
+      </div>
     </div>
 
     <footer>
@@ -476,7 +540,15 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
           </div>
         </div>
         <div class="success-msg" id="modal-success" style="display:none">
-          Richiesta inviata! Riceverai una email quando sarà approvata.
+          <h3>Richiesta inviata!</h3>
+          <p>Abbiamo mandato un'email di conferma a <strong id="success-email"></strong>.</p>
+          <p class="spam-note">
+            Se non la trovi entro pochi minuti, controlla la cartella <strong>spam</strong>.
+            Se è lì, segnala come <strong>"Non è spam"</strong> per ricevere correttamente
+            le prossime comunicazioni.
+          </p>
+          <p>Riceverai un'altra email quando la prenotazione sarà approvata.</p>
+          <button class="btn btn-primary ok-btn" id="modal-success-ok">Ho capito</button>
         </div>
       </div>
     </div>
@@ -590,14 +662,16 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         loadUtils: () => import('intl-tel-input/utils'),
       });
 
-      function updateEventColors() {
+      function updateEventColors(prevStart: Date | null, prevEnd: Date | null) {
+        // Only touch events whose membership in the selection range actually changed.
         calendar.getEvents().forEach((ev) => {
-          const { status } = ev.extendedProps as { status: string };
-          const inSelection = selStart && selEnd && ev.start! >= selStart && ev.end! <= selEnd;
-          if (inSelection) {
+          const wasIn = !!(prevStart && prevEnd && ev.start! >= prevStart && ev.end! <= prevEnd);
+          const isIn = !!(selStart && selEnd && ev.start! >= selStart && ev.end! <= selEnd);
+          if (wasIn === isIn) return;
+          if (isIn) {
             ev.setProp('backgroundColor', SEL_COLOR);
             ev.setProp('borderColor', SEL_COLOR);
-          } else if (status === 'available') {
+          } else if ((ev.extendedProps as { status: string }).status === 'available') {
             ev.setProp('backgroundColor', AVAIL_COLOR);
             ev.setProp('borderColor', AVAIL_COLOR);
           }
@@ -636,9 +710,11 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       }
 
       function clearSelection() {
+        const prevStart = selStart;
+        const prevEnd = selEnd;
         selStart = null;
         selEnd = null;
-        updateEventColors();
+        updateEventColors(prevStart, prevEnd);
         updateCheckoutButton();
       }
 
@@ -721,6 +797,8 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
 
           const slotStart = ev.start!;
           const slotEnd = ev.end!;
+          const prevStart = selStart;
+          const prevEnd = selEnd;
 
           if (!selStart || !selEnd) {
             // Auto-select 2 slots (1 hour) if the next slot is available and same day
@@ -764,7 +842,7 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
             selEnd = nextAvailable2 ? nextEnd2 : slotEnd;
           }
 
-          updateEventColors();
+          updateEventColors(prevStart, prevEnd);
           updateCheckoutButton();
         },
       });
@@ -791,15 +869,26 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         document.getElementById('modal-form')!.style.display = 'block';
         document.getElementById('modal-success')!.style.display = 'none';
         document.getElementById('modal-overlay')!.classList.add('open');
+        document.body.classList.add('modal-open');
       });
 
-      document.getElementById('modal-cancel')!.addEventListener('click', () => {
+      function closeBookingModal() {
         document.getElementById('modal-overlay')!.classList.remove('open');
-      });
+        document.body.classList.remove('modal-open');
+      }
+
+      function isSuccessShowing(): boolean {
+        return document.getElementById('modal-success')!.style.display !== 'none';
+      }
+
+      document.getElementById('modal-cancel')!.addEventListener('click', closeBookingModal);
+
+      document.getElementById('modal-success-ok')!.addEventListener('click', closeBookingModal);
 
       document.getElementById('modal-overlay')!.addEventListener('click', (e) => {
-        if (e.target === document.getElementById('modal-overlay'))
-          document.getElementById('modal-overlay')!.classList.remove('open');
+        // While showing the success state, only the "Ho capito" button can close.
+        if (isSuccessShowing()) return;
+        if (e.target === document.getElementById('modal-overlay')) closeBookingModal();
       });
 
       const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -870,6 +959,7 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         btn.textContent = 'Prenota';
 
         if (res.ok) {
+          document.getElementById('success-email')!.textContent = email;
           document.getElementById('modal-form')!.style.display = 'none';
           document.getElementById('modal-success')!.style.display = 'block';
           clearSelection();

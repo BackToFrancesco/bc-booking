@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { waitUntil } from '@vercel/functions';
 import sql from '../../../lib/db';
-import { sendAdminNewBooking } from '../../../lib/email';
+import { sendAdminNewBooking, sendUserBookingReceived } from '../../../lib/email';
 import { MOCK_API, BOOKING_HORIZON_MS } from '../../../lib/config';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -73,9 +73,14 @@ export const POST: APIRoute = async ({ request }) => {
     RETURNING id, name, email, phone, slot_start, slot_end, status
   `;
 
+  const bookingTyped = booking as { id: string; name: string; email: string; phone?: string; slot_start: string; slot_end: string };
   waitUntil(
-    sendAdminNewBooking(booking as { id: string; name: string; email: string; phone?: string; slot_start: string; slot_end: string })
+    sendAdminNewBooking(bookingTyped)
       .catch((err) => console.error('sendAdminNewBooking failed:', err)),
+  );
+  waitUntil(
+    sendUserBookingReceived(bookingTyped)
+      .catch((err) => console.error('sendUserBookingReceived failed:', err)),
   );
 
   return new Response(JSON.stringify({ ok: true, id: booking.id }), {
