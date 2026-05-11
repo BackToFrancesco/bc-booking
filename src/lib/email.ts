@@ -185,7 +185,10 @@ abbiamo ricevuto il tuo pagamento. La prenotazione è confermata.
 
 Orario: ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}
 
-Importante: non sono disponibili le docce interne. È presente un doccino esterno per togliersi la sabbia.
+Importante:
+• Il pallone non è fornito, portatelo con voi
+• Non sono disponibili le docce interne (è presente un doccino esterno per togliersi la sabbia)
+• Campo dotato di illuminazione esterna
 
 Ti aspettiamo in campo. Buon divertimento!
 
@@ -207,9 +210,14 @@ ${contactBlockText()}
       <p>Ciao ${booking.name},</p>
       <p>Abbiamo ricevuto il tuo pagamento. La prenotazione è confermata.</p>
       <p><strong>Orario:</strong> ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}</p>
-      <p style="background:#fffbeb;border-left:3px solid #f59e0b;padding:0.6rem 0.9rem;font-size:0.95em;">
-        <strong>⚠️ Importante:</strong> Non sono disponibili le docce interne. È presente un doccino esterno per togliersi la sabbia.
-      </p>
+      <div style="background:#fffbeb;border-left:3px solid #f59e0b;padding:0.6rem 0.9rem;font-size:0.95em;margin:0.75rem 0;">
+        <strong>⚠️ Importante</strong>
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li>Il pallone non è fornito, portatelo con voi</li>
+          <li>Non sono disponibili le docce interne (è presente un doccino esterno per togliersi la sabbia)</li>
+          <li>Campo dotato di illuminazione esterna</li>
+        </ul>
+      </div>
       <p>Ti aspettiamo in campo. Buon divertimento!</p>
       <p style="font-size:0.9em;color:#666;">
         Codice prenotazione: <code>${shortId}</code>

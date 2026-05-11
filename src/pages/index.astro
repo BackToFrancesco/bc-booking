@@ -101,6 +101,9 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         border-left: 4px solid var(--red);
       }
       .info-box strong { color: #1a1a1a; }
+      .info-box ul { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+      .info-box li { margin-bottom: 0.2rem; }
+      .info-box li:last-child { margin-bottom: 0; }
       .location-box {
         background: white;
         border-left: 4px solid var(--red);
@@ -447,8 +450,12 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       <div class="info-row">
         <div class="info-box">
           <div>
-            <strong>⚠️ Importante</strong><br />
-            Non sono disponibili le docce interne. È presente un doccino esterno per togliersi la sabbia.
+            <strong>⚠️ Importante</strong>
+            <ul>
+              <li>Pallone non fornito, portatelo con voi</li>
+              <li>Docce non disponibili (solo doccino esterno per la sabbia)</li>
+              <li>Illuminazione esterna disponibile</li>
+            </ul>
           </div>
         </div>
         <div class="location-box">
