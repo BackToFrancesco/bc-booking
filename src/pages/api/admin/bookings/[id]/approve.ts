@@ -16,7 +16,7 @@ export const POST: APIRoute = async ({ params }) => {
   `;
 
   if (!booking) {
-    return new Response(JSON.stringify({ error: 'Booking not found or not pending' }), { status: 404 });
+    return new Response(JSON.stringify({ error: 'Prenotazione non trovata o non in attesa' }), { status: 404 });
   }
 
   waitUntil(

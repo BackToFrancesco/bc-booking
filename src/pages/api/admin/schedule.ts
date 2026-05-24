@@ -17,12 +17,16 @@ export const PUT: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
-  const { schedules } = await request.json() as {
-    schedules: { day_of_week: number; open_hour: number; close_hour: number }[]
-  };
+  let schedules: { day_of_week: number; open_hour: number; close_hour: number }[] = [];
+  try {
+    const body = await request.json();
+    schedules = body.schedules;
+  } catch {
+    return new Response(JSON.stringify({ error: 'JSON non valido' }), { status: 400 });
+  }
 
   if (!Array.isArray(schedules) || schedules.length !== 7) {
-    return new Response(JSON.stringify({ error: 'schedules must have 7 entries' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'Gli orari devono contenere esattamente 7 elementi' }), { status: 400 });
   }
 
   for (const s of schedules) {

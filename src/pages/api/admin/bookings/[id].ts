@@ -21,11 +21,11 @@ export const DELETE: APIRoute = async ({ params }) => {
   `;
 
   if (!booking) {
-    return new Response(JSON.stringify({ error: 'Booking not found' }), { status: 404 });
+    return new Response(JSON.stringify({ error: 'Prenotazione non trovata' }), { status: 404 });
   }
 
   if (new Date(booking.slot_start as string) <= new Date()) {
-    return new Response(JSON.stringify({ error: 'Cannot cancel a past booking' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'Non è possibile cancellare una prenotazione passata' }), { status: 400 });
   }
 
   await sql`DELETE FROM bookings WHERE id = ${id!}`;
@@ -40,7 +40,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   try {
     body = await request.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'JSON non valido' }), { status: 400 });
   }
 
   const { status, slot_start, slot_end, notify = true } = body;
@@ -48,26 +48,26 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   const wantsTime = typeof slot_start === 'string' || typeof slot_end === 'string';
 
   if (!wantsStatus && !wantsTime) {
-    return new Response(JSON.stringify({ error: 'Nothing to update' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'Nessun dato da aggiornare' }), { status: 400 });
   }
 
   if (wantsStatus && !ALLOWED_STATUSES.has(status!)) {
-    return new Response(JSON.stringify({ error: 'Invalid status' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'Stato non valido' }), { status: 400 });
   }
 
   let newStart: Date | null = null;
   let newEnd: Date | null = null;
   if (wantsTime) {
     if (!slot_start || !slot_end) {
-      return new Response(JSON.stringify({ error: 'slot_start and slot_end both required' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'slot_start e slot_end sono entrambi obbligatori' }), { status: 400 });
     }
     newStart = new Date(slot_start);
     newEnd = new Date(slot_end);
     if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newEnd <= newStart) {
-      return new Response(JSON.stringify({ error: 'Invalid slot range' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'Intervallo slot non valido' }), { status: 400 });
     }
     if (newStart <= new Date()) {
-      return new Response(JSON.stringify({ error: 'Cannot reschedule into the past' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'Non è possibile spostare la prenotazione nel passato' }), { status: 400 });
     }
   }
 
@@ -81,7 +81,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     FROM bookings WHERE id = ${id!}
   `;
   if (!existing) {
-    return new Response(JSON.stringify({ error: 'Booking not found' }), { status: 404 });
+    return new Response(JSON.stringify({ error: 'Prenotazione non trovata' }), { status: 404 });
   }
 
   if (wantsTime) {

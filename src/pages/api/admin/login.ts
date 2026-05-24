@@ -2,7 +2,13 @@ import type { APIRoute } from 'astro';
 import { createHash } from 'crypto';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const { password } = await request.json();
+  let password = '';
+  try {
+    const body = await request.json();
+    password = typeof body.password === 'string' ? body.password : '';
+  } catch {
+    return new Response(JSON.stringify({ error: 'JSON non valido' }), { status: 400 });
+  }
   const hashed = createHash('sha256').update(password).digest('hex');
   const expected = createHash('sha256').update(import.meta.env.ADMIN_PASSWORD).digest('hex');
 

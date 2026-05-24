@@ -9,7 +9,7 @@ export const GET: APIRoute = async ({ url }) => {
   const to = url.searchParams.get('to');
 
   if (!from || !to) {
-    return new Response(JSON.stringify({ error: 'from and to required' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'Parametri "from" e "to" obbligatori' }), { status: 400 });
   }
 
   if (MOCK_API) {
@@ -20,6 +20,19 @@ export const GET: APIRoute = async ({ url }) => {
 
   const fromDate = new Date(from);
   const toDate = new Date(to);
+
+  if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+    return new Response(JSON.stringify({ error: 'Date non valide' }), { status: 400 });
+  }
+
+  const MAX_RANGE_MS = 180 * 24 * 60 * 60 * 1000;
+  if (toDate.getTime() - fromDate.getTime() > MAX_RANGE_MS) {
+    return new Response(
+      JSON.stringify({ error: 'Intervallo di date troppo ampio (massimo 180 giorni)' }),
+      { status: 400 }
+    );
+  }
+
   toDate.setDate(toDate.getDate() + 1);
 
   const [schedule, bookings, blocked] = await Promise.all([
