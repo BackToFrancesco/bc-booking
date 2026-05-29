@@ -57,12 +57,14 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // 2. Controllo che sia nello stesso giorno
-  if (start.toDateString() !== new Date(end.getTime() - 1).toDateString()) {
+  const toDateStrRome = (d: Date) => d.toLocaleDateString('sv', { timeZone: 'Europe/Rome' });
+  if (toDateStrRome(start) !== toDateStrRome(new Date(end.getTime() - 1))) {
     return new Response(JSON.stringify({ error: 'La prenotazione deve iniziare e terminare nello stesso giorno' }), { status: 400 });
   }
 
   // 3. Orari di apertura/chiusura
-  const dow = start.getDay();
+  const dowStr = new Intl.DateTimeFormat('en', { weekday: 'short', timeZone: 'Europe/Rome' }).format(start);
+  const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(dowStr);
   const [schedule] = await sql<{ open_hour: number; close_hour: number }[]>`
     SELECT open_hour, close_hour FROM day_schedules WHERE day_of_week = ${dow}
   `;
@@ -70,11 +72,15 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Giorno non disponibile per prenotazioni' }), { status: 400 });
   }
 
-  const startDayStart = new Date(start);
-  startDayStart.setHours(0, 0, 0, 0);
-
-  const startHourDecimal = (start.getTime() - startDayStart.getTime()) / (60 * 60 * 1000);
-  const endHourDecimal = (end.getTime() - startDayStart.getTime()) / (60 * 60 * 1000);
+  const TZ = 'Europe/Rome';
+  const toHourDecimal = (d: Date) => {
+    const parts = new Intl.DateTimeFormat('en', { hour: 'numeric', minute: 'numeric', hour12: false, timeZone: TZ }).formatToParts(d);
+    const h = Number(parts.find(p => p.type === 'hour')!.value);
+    const m = Number(parts.find(p => p.type === 'minute')!.value);
+    return h + m / 60;
+  };
+  const startHourDecimal = toHourDecimal(start);
+  const endHourDecimal = toHourDecimal(end);
 
   if (startHourDecimal < schedule.open_hour || endHourDecimal > schedule.close_hour) {
     return new Response(
