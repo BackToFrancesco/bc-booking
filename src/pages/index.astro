@@ -564,10 +564,12 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       import { Calendar } from '@fullcalendar/core';
       import timeGridPlugin from '@fullcalendar/timegrid';
       import interactionPlugin from '@fullcalendar/interaction';
+      import luxonPlugin from '@fullcalendar/luxon3';
       import intlTelInput from 'intl-tel-input';
       import 'intl-tel-input/dist/css/intlTelInput.css';
 
       import { BOOKING_HORIZON_MS } from '../lib/config';
+      import { TZ, romeDateTime, romeDateStr, romeDayOfWeek, romeDatesInRange } from '../lib/rome';
 
       const PRICE_PER_SLOT = Number((document.getElementById('checkout-btn') as HTMLElement).dataset.price ?? 10);
       const SLOT_MS = 30 * 60 * 1000;
@@ -589,12 +591,8 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       let cacheTime: number | null = null;
       const CACHE_TTL_MS = 5 * 60 * 1000;
 
-      function localDateStr(d: Date): string {
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      }
-
       async function fetchSlotData(start: Date, end: Date): Promise<void> {
-        const res = await fetch(`/api/slots?from=${localDateStr(start)}&to=${localDateStr(end)}`);
+        const res = await fetch(`/api/slots?from=${romeDateStr(start)}&to=${romeDateStr(end)}`);
         slotData = await res.json();
         cacheStart = start;
         cacheEnd = end;
@@ -619,16 +617,13 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         const now = new Date();
         const events: any[] = [];
 
-        const cursor = new Date(rangeStart);
-        cursor.setHours(0, 0, 0, 0);
-        while (cursor < rangeEnd) {
-          const dow = cursor.getDay();
+        for (const dateStr of romeDatesInRange(rangeStart, rangeEnd)) {
+          const dow = romeDayOfWeek(romeDateTime(dateStr, 12));
           const day = slotData.schedule.find((s) => s.day_of_week === dow);
           if (day) {
-            const dateStr = localDateStr(cursor);
             for (let h = day.open_hour; h < day.close_hour; h++) {
               for (const m of [0, 30]) {
-                const start = new Date(`${dateStr}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
+                const start = romeDateTime(dateStr, h, m);
                 const end = new Date(start.getTime() + SLOT_MS);
                 let status = 'available';
                 let reason: string | null = null;
@@ -659,7 +654,6 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
               }
             }
           }
-          cursor.setDate(cursor.getDate() + 1);
         }
         return events;
       }
@@ -692,7 +686,7 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         return calendar.getEvents().some((ev) => {
           if ((ev.extendedProps as { status: string }).status !== 'available') return false;
           const t = ev.start!.getTime();
-          const sameDay = ev.start!.toDateString() === selStart!.toDateString();
+          const sameDay = romeDateStr(ev.start!) === romeDateStr(selStart!);
           return sameDay && (t === beforeStart.getTime() || t === afterStart.getTime());
         });
       }
@@ -726,17 +720,18 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
       }
 
       function formatRange(start: Date, end: Date): string {
-        const opts: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'Europe/Rome' };
+        const opts: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: 'long', timeZone: TZ };
         const dateStr = start.toLocaleDateString('it-IT', opts);
-        const startTime = start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' });
-        const endTime = end.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' });
+        const startTime = start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
+        const endTime = end.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
         return `${dateStr}, ${startTime} – ${endTime}`;
       }
 
       const isMobile = () => window.innerWidth < 640;
 
       const calendar = new Calendar(document.getElementById('calendar')!, {
-        plugins: [timeGridPlugin, interactionPlugin],
+        plugins: [timeGridPlugin, interactionPlugin, luxonPlugin],
+        timeZone: TZ,
         initialView: isMobile() ? 'timeGrid3' : 'timeGrid7days',
         views: {
           timeGrid7days: { type: 'timeGrid', duration: { days: 7 } },
@@ -771,7 +766,7 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
         },
         eventContent: (arg) => {
           const { status } = arg.event.extendedProps as { status: string };
-          const time = arg.event.start!.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+          const time = arg.event.start!.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
           const icon = (status !== 'available' && status !== 'past') ? '🔒 ' : '';
           return { html: `<div style="width:100%;text-align:center;font-size:0.8rem;font-weight:600;padding:2px 0;">${icon}${time}</div>` };
         },
@@ -811,16 +806,16 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
             // Auto-select 2 slots (1 hour) if the next slot is available and same day
             const nextStart = slotEnd;
             const nextEnd = new Date(slotEnd.getTime() + SLOT_MS);
-            const sameDay = nextStart.toISOString().slice(0, 10) === slotStart.toISOString().slice(0, 10);
+            const sameDay = romeDateStr(nextStart) === romeDateStr(slotStart);
             const nextAvailable = sameDay && calendar.getEvents().some(
               (e) => e.start!.getTime() === nextStart.getTime() && e.extendedProps.status === 'available'
             );
             selStart = slotStart;
             selEnd = nextAvailable ? nextEnd : slotEnd;
-          } else if (slotStart.getTime() === selEnd.getTime() && slotStart.toDateString() === selStart.toDateString()) {
+          } else if (slotStart.getTime() === selEnd.getTime() && romeDateStr(slotStart) === romeDateStr(selStart)) {
             // Adjacent at end, same day → extend
             selEnd = slotEnd;
-          } else if (slotEnd.getTime() === selStart.getTime() && slotEnd.toDateString() === selEnd.toDateString()) {
+          } else if (slotEnd.getTime() === selStart.getTime() && romeDateStr(new Date(slotEnd.getTime() - 1)) === romeDateStr(new Date(selEnd.getTime() - 1))) {
             // Adjacent at start, same day → extend backward
             selStart = slotStart;
           } else if (slotEnd.getTime() === selEnd.getTime()) {
@@ -841,7 +836,7 @@ const bookingPrice = Number(import.meta.env.BOOKING_PRICE ?? 10);
             // Non-adjacent or different day → reset and start new selection (auto-select 2)
             const nextStart2 = slotEnd;
             const nextEnd2 = new Date(slotEnd.getTime() + SLOT_MS);
-            const sameDay2 = nextStart2.toDateString() === slotStart.toDateString();
+            const sameDay2 = romeDateStr(nextStart2) === romeDateStr(slotStart);
             const nextAvailable2 = sameDay2 && calendar.getEvents().some(
               (e) => e.start!.getTime() === nextStart2.getTime() && e.extendedProps.status === 'available'
             );

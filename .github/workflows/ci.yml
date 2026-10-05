@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Unit test; TZ diverso da Roma per verificare che gli orari non dipendano dal fuso della macchina
+      - run: npm test
+        env:
+          TZ: Europe/Dublin
+      - run: npm run build

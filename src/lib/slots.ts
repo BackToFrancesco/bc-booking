@@ -1,3 +1,5 @@
+import { romeDateTime, romeDayOfWeek } from './rome';
+
 export const SLOT_DURATION_MINUTES = 30;
 
 export type DaySchedule = {
@@ -20,8 +22,7 @@ export function buildSlotDateTimes(
   dateStr: string,
   schedule: DaySchedule[]
 ): { start: Date; end: Date }[] {
-  const date = new Date(`${dateStr}T00:00:00`);
-  const dow = date.getDay();
+  const dow = romeDayOfWeek(romeDateTime(dateStr, 12));
   const day = schedule.find((s) => s.day_of_week === dow);
   if (!day) return [];
 
@@ -29,7 +30,7 @@ export function buildSlotDateTimes(
   // Generate 30-min slots from open_hour:00 up to (but not including) close_hour:00
   for (let h = day.open_hour; h < day.close_hour; h++) {
     for (const m of [0, 30]) {
-      const start = new Date(`${dateStr}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`);
+      const start = romeDateTime(dateStr, h, m);
       const end = new Date(start.getTime() + SLOT_DURATION_MINUTES * 60 * 1000);
       slots.push({ start, end });
     }

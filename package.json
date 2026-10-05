@@ -9,21 +9,26 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/vercel": "^10.0.6",
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/daygrid": "^6.1.20",
     "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/luxon3": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
     "@vercel/functions": "^3.5.1",
     "astro": "^6.2.2",
     "intl-tel-input": "^28.0.4",
+    "luxon": "^3.7.2",
     "nodemailer": "^8.0.7",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
-    "@types/nodemailer": "^8.0.0"
+    "@types/luxon": "^3.7.6",
+    "@types/nodemailer": "^8.0.0",
+    "vitest": "^4.1.11"
   }
 }

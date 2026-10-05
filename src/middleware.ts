@@ -1,5 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
-import { createHash } from 'crypto';
+import { SESSION_COOKIE, verifySessionToken } from './lib/admin-auth';
 
 const PROTECTED = ['/admin', '/api/admin'];
 
@@ -9,10 +9,7 @@ export const onRequest = defineMiddleware(({ url, cookies, redirect }, next) => 
 
   if (!isProtected || isLoginRoute) return next();
 
-  const session = cookies.get('admin_session')?.value;
-  const expected = createHash('sha256').update(import.meta.env.ADMIN_PASSWORD ?? '').digest('hex');
-
-  if (session !== expected) {
+  if (!verifySessionToken(cookies.get(SESSION_COOKIE)?.value)) {
     if (url.pathname.startsWith('/api/')) {
       return new Response(JSON.stringify({ error: 'Non autorizzato' }), { status: 401 });
     }

@@ -511,6 +511,8 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       import { Calendar } from '@fullcalendar/core';
       import timeGridPlugin from '@fullcalendar/timegrid';
       import interactionPlugin from '@fullcalendar/interaction';
+      import luxonPlugin from '@fullcalendar/luxon3';
+      import { TZ, romeDateStr, toRomeInput, fromRomeInput } from '../lib/rome';
 
       // ── Pending bookings table actions ──────────────────────────────────
       function openModal(id: string) {
@@ -540,17 +542,16 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
 
       // ── Helpers ─────────────────────────────────────────────────────────
       function fmtRange(start: Date, end: Date): string {
-        const tz = 'Europe/Rome';
-        const d = start.toLocaleString('it-IT', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', timeZone: tz });
-        const t1 = start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: tz });
-        const t2 = end.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: tz });
+        const d = start.toLocaleString('it-IT', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', timeZone: TZ });
+        const t1 = start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
+        const t2 = end.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
         return `${d}, ${t1} – ${t2}`;
       }
 
       function fmtDateTime(d: Date): string {
         return d.toLocaleString('it-IT', {
           weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
-          hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome',
+          hour: '2-digit', minute: '2-digit', timeZone: TZ,
         });
       }
 
@@ -591,11 +592,6 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       });
 
       // ── Detail modal ─────────────────────────────────────────────────────
-      function toLocalInput(d: Date): string {
-        const pad = (n: number) => String(n).padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      }
-
       type DetailState = {
         bookingId: string;
         name: string;
@@ -625,8 +621,8 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         } else {
           // Reset values to originals
           status.value = detail.originalStatus;
-          start.value = toLocalInput(detail.originalStart);
-          end.value = toLocalInput(detail.originalEnd);
+          start.value = toRomeInput(detail.originalStart);
+          end.value = toRomeInput(detail.originalEnd);
           (document.getElementById('detail-save') as HTMLButtonElement).disabled = true;
           (document.getElementById('detail-notify') as HTMLInputElement).disabled = true;
         }
@@ -637,8 +633,8 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
         const status = (document.getElementById('detail-status') as HTMLSelectElement).value;
         const startVal = (document.getElementById('detail-start') as HTMLInputElement).value;
         const endVal = (document.getElementById('detail-end') as HTMLInputElement).value;
-        const newStart = startVal ? new Date(startVal) : detail.originalStart;
-        const newEnd = endVal ? new Date(endVal) : detail.originalEnd;
+        const newStart = startVal ? fromRomeInput(startVal) : detail.originalStart;
+        const newEnd = endVal ? fromRomeInput(endVal) : detail.originalEnd;
 
         const statusChanged = status !== detail.originalStatus;
         const timeChanged =
@@ -703,8 +699,8 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
           const startInp = document.getElementById('detail-start') as HTMLInputElement;
           const endInp = document.getElementById('detail-end') as HTMLInputElement;
           statusSel.value = status!;
-          startInp.value = toLocalInput(start);
-          endInp.value = toLocalInput(end);
+          startInp.value = toRomeInput(start);
+          endInp.value = toRomeInput(end);
 
           detail = {
             bookingId: bookingId!,
@@ -804,8 +800,8 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
           errEl.style.display = 'block';
           return;
         }
-        const newStart = new Date(newStartVal);
-        const newEnd = new Date(newEndVal);
+        const newStart = fromRomeInput(newStartVal);
+        const newEnd = fromRomeInput(newEndVal);
         if (newEnd <= newStart) {
           errEl.textContent = 'L\'orario di fine deve essere dopo l\'inizio.';
           errEl.style.display = 'block';
@@ -857,7 +853,8 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
       const isMobile = () => window.innerWidth < 640;
 
       const adminCalendar = new Calendar(document.getElementById('admin-calendar')!, {
-        plugins: [timeGridPlugin, interactionPlugin],
+        plugins: [timeGridPlugin, interactionPlugin, luxonPlugin],
+        timeZone: TZ,
         initialView: isMobile() ? 'timeGrid3' : 'timeGrid7',
         initialDate: new Date(),
         locale: 'it',
@@ -883,7 +880,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
           if (info.start < new Date()) return false;
           // Must be same day
           const endMinus30 = new Date(info.end.getTime() - 30 * 60 * 1000);
-          if (info.start.toDateString() !== endMinus30.toDateString()) return false;
+          if (romeDateStr(info.start) !== romeDateStr(endMinus30)) return false;
           // Must not overlap existing events
           const evs = adminCalendar.getEvents();
           let cur = new Date(info.start);
