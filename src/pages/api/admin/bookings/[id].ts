@@ -8,6 +8,7 @@ import {
   sendUserRescheduled,
 } from '../../../../lib/email';
 import { MOCK_API } from '../../../../lib/config';
+import { isOverlapViolation } from '../../../../lib/db-errors';
 
 const ALLOWED_STATUSES = new Set(['pending', 'approved', 'confirmed', 'rejected']);
 
@@ -84,10 +85,16 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     return new Response(JSON.stringify({ error: 'Prenotazione non trovata' }), { status: 404 });
   }
 
-  if (wantsTime) {
+  const newStatus = wantsStatus ? status! : existing.status;
+  const startToWrite = newStart ?? existing.slot_start;
+  const endToWrite = newEnd ?? existing.slot_end;
+  // Una prenotazione rifiutata non occupa lo slot: riattivarla equivale a prenotarlo di nuovo
+  const reactivating = existing.status === 'rejected' && newStatus !== 'rejected';
+
+  if (wantsTime || reactivating) {
     const [conflictBooking] = await sql`
       SELECT id FROM bookings
-      WHERE slot_start < ${newEnd!} AND slot_end > ${newStart!}
+      WHERE slot_start < ${endToWrite} AND slot_end > ${startToWrite}
         AND status != 'rejected'
         AND id != ${id!}
       LIMIT 1
@@ -97,7 +104,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     }
     const [conflictBlocked] = await sql`
       SELECT id FROM blocked_slots
-      WHERE slot_start < ${newEnd!} AND slot_end > ${newStart!}
+      WHERE slot_start < ${endToWrite} AND slot_end > ${startToWrite}
       LIMIT 1
     `;
     if (conflictBlocked) {
@@ -105,19 +112,20 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     }
   }
 
-  const newStatus = wantsStatus ? status! : existing.status;
-  const startToWrite = newStart ?? existing.slot_start;
-  const endToWrite = newEnd ?? existing.slot_end;
-
-  const [updated] = await sql<{
-    id: string; name: string; email: string;
-    slot_start: Date; slot_end: Date; status: string;
-  }[]>`
-    UPDATE bookings
-    SET status = ${newStatus}, slot_start = ${startToWrite}, slot_end = ${endToWrite}
-    WHERE id = ${id!}
-    RETURNING id, name, email, slot_start, slot_end, status
-  `;
+  let updated: { id: string; name: string; email: string; slot_start: Date; slot_end: Date; status: string };
+  try {
+    [updated] = await sql<typeof updated[]>`
+      UPDATE bookings
+      SET status = ${newStatus}, slot_start = ${startToWrite}, slot_end = ${endToWrite}
+      WHERE id = ${id!}
+      RETURNING id, name, email, slot_start, slot_end, status
+    `;
+  } catch (err) {
+    if (isOverlapViolation(err)) {
+      return new Response(JSON.stringify({ error: 'Slot non disponibile (sovrapposizione con un\'altra prenotazione)' }), { status: 409 });
+    }
+    throw err;
+  }
 
   if (notify !== false) {
     const statusChanged = wantsStatus && status !== existing.status;

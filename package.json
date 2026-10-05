@@ -27,6 +27,7 @@
     "postgres": "^3.4.9"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/luxon": "^3.7.6",
     "@types/nodemailer": "^8.0.0",
     "vitest": "^4.1.11"

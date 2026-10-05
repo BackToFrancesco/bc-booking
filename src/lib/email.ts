@@ -17,6 +17,16 @@ function fromHeader(): string {
   return `"${SENDER_NAME}" <${import.meta.env.GMAIL_USER}>`;
 }
 
+/** I dati inseriti dal cliente non devono poter aggiungere HTML (link, immagini) alle email. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const CONTACT_NUMBER = '+39 342 302 2007';
 const CONTACT_NAME = 'Matteo Sturaro';
 const CONTACT_WA_LINK = 'https://wa.me/393423022007';
@@ -95,9 +105,9 @@ ${contactBlockText()}
     text,
     html: `
       <h2>Nuova richiesta di prenotazione</h2>
-      <p><strong>Nome:</strong> ${booking.name}</p>
-      <p><strong>Email:</strong> ${booking.email}</p>
-      <p><strong>Telefono:</strong> ${booking.phone ?? 'Non fornito'}</p>
+      <p><strong>Nome:</strong> ${escapeHtml(booking.name)}</p>
+      <p><strong>Email:</strong> ${escapeHtml(booking.email)}</p>
+      <p><strong>Telefono:</strong> ${escapeHtml(booking.phone ?? 'Non fornito')}</p>
       <p><strong>Slot:</strong> ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}</p>
       <p><strong>Durata:</strong> ${slots * 30} min</p>
       <p><strong>Totale:</strong> €${total}</p>
@@ -149,7 +159,7 @@ ${contactBlockText()}
     text,
     html: `
       <h2>Conferma la prenotazione con il pagamento</h2>
-      <p>Ciao ${booking.name},</p>
+      <p>Ciao ${escapeHtml(booking.name)},</p>
       <p>la tua richiesta è stata approvata. Per confermare definitivamente la prenotazione, completa il pagamento qui sotto.</p>
       <p><strong>Orario:</strong> ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}</p>
       <p><strong>Totale da pagare:</strong> €${total} (€${price} / 30 min)</p>
@@ -207,7 +217,7 @@ ${contactBlockText()}
     text,
     html: `
       <h2>Pagamento ricevuto, prenotazione confermata!</h2>
-      <p>Ciao ${booking.name},</p>
+      <p>Ciao ${escapeHtml(booking.name)},</p>
       <p>Abbiamo ricevuto il tuo pagamento. La prenotazione è confermata.</p>
       <p><strong>Orario:</strong> ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}</p>
       <div style="background:#fffbeb;border-left:3px solid #f59e0b;padding:0.6rem 0.9rem;font-size:0.95em;margin:0.75rem 0;">
@@ -264,7 +274,7 @@ ${contactBlockText()}
     text,
     html: `
       <h2>Il tuo orario è stato aggiornato</h2>
-      <p>Ciao ${booking.name},</p>
+      <p>Ciao ${escapeHtml(booking.name)},</p>
       <p>L'orario della tua prenotazione è stato modificato:</p>
       <p>
         <strong>Vecchio orario:</strong> <s>${formatDateTime(booking.old_slot_start)} – ${formatTime(booking.old_slot_end)}</s><br />
@@ -308,7 +318,7 @@ ${contactBlockText()}
     text,
     html: `
       <h2>Aggiornamento sulla tua prenotazione</h2>
-      <p>Ciao ${booking.name},</p>
+      <p>Ciao ${escapeHtml(booking.name)},</p>
       <p>Purtroppo non è stato possibile confermare la tua richiesta per lo slot del ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}.</p>
       <p>Puoi effettuare una nuova prenotazione su un altro orario.</p>
       <p>A presto,<br>Basket Conselve</p>
@@ -354,7 +364,7 @@ ${contactBlockText()}
     text,
     html: `
       <h2>Abbiamo ricevuto la tua richiesta</h2>
-      <p>Ciao ${booking.name},</p>
+      <p>Ciao ${escapeHtml(booking.name)},</p>
       <p>abbiamo ricevuto la tua richiesta di prenotazione.</p>
       <p><strong>Orario:</strong> ${formatDateTime(booking.slot_start)} – ${formatTime(booking.slot_end)}</p>
       <p><strong>Totale:</strong> €${total} (€${price} / 30 min)</p>

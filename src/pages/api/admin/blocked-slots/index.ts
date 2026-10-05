@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import sql from '../../../../lib/db';
+import { MOCK_API } from '../../../../lib/config';
 
 export const POST: APIRoute = async ({ request }) => {
   let slot_start: string | undefined;
@@ -26,6 +27,23 @@ export const POST: APIRoute = async ({ request }) => {
   }
   if (end <= start) {
     return new Response(JSON.stringify({ error: 'slot_end deve essere dopo slot_start' }), { status: 400 });
+  }
+
+  if (MOCK_API) return new Response(JSON.stringify({ ok: true, id: 'mock-block' }), { status: 201 });
+
+  // Bloccare sopra una prenotazione attiva lascerebbe il cliente su uno slot bloccato:
+  // va prima spostata o rifiutata
+  const [conflict] = await sql`
+    SELECT id FROM bookings
+    WHERE slot_start < ${end} AND slot_end > ${start}
+      AND status != 'rejected'
+    LIMIT 1
+  `;
+  if (conflict) {
+    return new Response(
+      JSON.stringify({ error: 'Nell\'intervallo c\'è una prenotazione attiva: spostala o rifiutala prima di bloccare' }),
+      { status: 409 },
+    );
   }
 
   const [row] = await sql`

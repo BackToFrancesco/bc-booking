@@ -4,6 +4,7 @@ import sql from '../../../lib/db';
 import { sendAdminNewBooking, sendUserBookingReceived } from '../../../lib/email';
 import { MOCK_API, BOOKING_HORIZON_MS } from '../../../lib/config';
 import { SLOT_DURATION_MINUTES } from '../../../lib/slots';
+import { isOverlapViolation } from '../../../lib/db-errors';
 
 export const POST: APIRoute = async ({ request }) => {
   let body: { name?: string; email?: string; phone?: string; slot_start?: string; slot_end?: string };
@@ -110,11 +111,20 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Slot non disponibile' }), { status: 409 });
   }
 
-  const [booking] = await sql`
-    INSERT INTO bookings (name, email, phone, slot_start, slot_end, status)
-    VALUES (${name}, ${email}, ${phone || null}, ${start}, ${end}, 'pending')
-    RETURNING id, name, email, phone, slot_start, slot_end, status
-  `;
+  let booking;
+  try {
+    [booking] = await sql`
+      INSERT INTO bookings (name, email, phone, slot_start, slot_end, status)
+      VALUES (${name}, ${email}, ${phone || null}, ${start}, ${end}, 'pending')
+      RETURNING id, name, email, phone, slot_start, slot_end, status
+    `;
+  } catch (err) {
+    // Richiesta simultanea sullo stesso slot: il vincolo del DB ne lascia passare una sola
+    if (isOverlapViolation(err)) {
+      return new Response(JSON.stringify({ error: 'Slot non disponibile' }), { status: 409 });
+    }
+    throw err;
+  }
 
   const bookingTyped = booking as { id: string; name: string; email: string; phone?: string; slot_start: string; slot_end: string };
   waitUntil(
